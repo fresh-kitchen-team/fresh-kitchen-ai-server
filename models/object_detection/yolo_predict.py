@@ -1,10 +1,15 @@
+import os
 from ultralytics import YOLO
 
-# 1. 모델 불러오기
-model = YOLO('yolov8n.pt')
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 2. 추론 실행 (경로에서 맨 앞 '/' 제거 확인!)
-results = model.predict(source='predict/fridge_test.jpeg', conf=0.25, device='mps')
+model = YOLO(os.path.join(_BASE_DIR, 'yolo_model', 'yolov8n.pt'))
+
+results = model.predict(
+    source=os.path.join(_BASE_DIR, 'picture_model', 'predict', 'fridge_test.jpeg'),
+    conf=0.25,
+    device='mps'
+)
 
 # 3. 결과 해석 및 출력
 for result in results:
@@ -18,5 +23,5 @@ for result in results:
         print(f"✅ 발견: [{cls_name}] - 확신도: {conf*100:.2f}%")
 
     # 4. 결과 이미지 저장
-    result.save(filename='yolo_result.jpg')
+    result.save(filename=os.path.join(_BASE_DIR, 'yolo_model', 'yolo_result.jpg'))
     print(f"\n🖼️ 총 {len(boxes)}개의 물체를 찾았습니다. 결과는 'yolo_result.jpg' 확인!")

@@ -7,9 +7,9 @@ import os
 # ==========================================
 # 1. 설정
 # ==========================================
-_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(_BASE_DIR, 'dataset', 'test')
-MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m.pth')
+MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver2.pth')
 BATCH_SIZE = 8  # MPS 안정성 최우선
 NUM_WORKERS = 0  # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
 

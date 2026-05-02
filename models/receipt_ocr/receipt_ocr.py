@@ -12,7 +12,7 @@ import mimetypes
 from dotenv import load_dotenv
 from pathlib import Path
 
-_PROJECT_ROOT = Path(__file__).parent.parent
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
 
 # GOOGLE_APPLICATION_CREDENTIALS: None 방지 + 상대경로 → 절대경로 변환
@@ -127,8 +127,8 @@ def filter_with_gemini(items: list) -> list:
         return []
 
 if __name__ == "__main__":
-    _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    TARGET_FILE = os.path.join(_BASE_DIR, 'receipt_model', 'receipt.png')
+    _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    TARGET_FILE = os.path.join(_BASE_DIR, 'receipt.png')
     
     raw_list = process_receipt_raw(TARGET_FILE)
     
