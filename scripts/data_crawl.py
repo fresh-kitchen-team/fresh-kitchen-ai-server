@@ -16,11 +16,11 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_ROOT = os.path.join(_BASE_DIR, 'dataset', 'crawldata')
 
 queries = [
-    "새송이버섯 1봉지",
-    "팽이버섯 묶음",
-    "느타리버섯 팩",
-    "표고버섯 팩",
-    "양송이버섯 봉지"
+    "흙당근 1봉지",
+    "세척당근 3입 팩",
+    "제주 구좌당근",
+    "미니 당근 팩",
+    "껍질 벗긴 손질 당근"
 ]
 def convert_to_jpg(folder_path):
     """폴더 내의 모든 이미지를 jpg로 변환하고 원본을 삭제합니다."""
