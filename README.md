@@ -2,6 +2,24 @@
 
 fresh-kitchen 프로젝트의 AI 서버 — 음식 이미지 분류, 영수증 OCR, 냉장고 물체 감지를 담당합니다.
 
+## 전체 시스템 흐름
+
+```
+사용자 (앱)
+    ↓ 사진 촬영
+백엔드 (Spring)
+    ↓ 이미지 + Bearer 토큰 전달
+AI 서버 (FastAPI) ← main.py
+    ↓ 모델 추론
+EfficientNet V2-M / Document AI / YOLOv8n
+    ↓ JSON 반환
+백엔드 (Spring)
+    ↓ DTO 변환 후 DB 저장 및 앱 응답
+사용자 (앱)
+```
+
+---
+
 ## 구성
 
 ### models/food_classifier — 음식 이미지 분류
@@ -53,6 +71,15 @@ python3 -m uvicorn main:app --reload --port 8000
 http://127.0.0.1:8000/docs
 ```
 
+### 외부 접속 (백엔드 팀 연동)
+
+```bash
+ngrok http 8000
+```
+생성된 `https://xxxx.ngrok-free.dev` 주소를 백엔드 팀에게 전달하세요.
+
+> ⚠️ 무료 플랜은 ngrok 재시작 시 주소가 바뀝니다.
+
 ### 개별 모델 실행
 
 ```bash
@@ -84,6 +111,20 @@ python training/train_EfficientNet_V2_M.py
 
 모든 엔드포인트는 `multipart/form-data`로 이미지 파일을 받습니다.
 
+Bearer 토큰 인증 필요: `Authorization: Bearer {AI_SECRET_TOKEN}`
+
+### Bearer 토큰 발급
+
+```bash
+# 토큰 생성
+python3 -c "import secrets; print(secrets.token_hex(32))"
+
+# .env에 저장
+AI_SECRET_TOKEN=생성된_토큰값
+```
+
+생성한 토큰을 백엔드 팀에게 전달하면 백엔드에서 모든 요청에 헤더로 포함하여 전송합니다.
+
 ---
 
 ## 디렉토리 구조
@@ -97,6 +138,9 @@ fresh-kitchen-ai-server/
 │   └── object_detection/       # YOLOv8 물체 감지
 ├── training/                   # 모델 학습 스크립트
 ├── scripts/                    # 데이터 전처리 유틸리티 (Git 미포함)
+├── yolo_model/                 # YOLOv8 모델 가중치 (Git 미포함)
+├── receipt_model/              # Google Cloud 인증 파일 (Git 미포함)
+├── picture_model/predict/      # 테스트용 이미지 샘플 (Git 미포함)
 ├── docs/                       # 개발 문서 및 학습 로그
 ├── .env.example
 ├── requirements.txt
