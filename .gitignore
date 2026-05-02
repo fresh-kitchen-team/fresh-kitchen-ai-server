@@ -1,0 +1,58 @@
+# 모델 파일 (깃에 올리지 말 것)
+*.pth
+*.pt
+*.h5
+*.pkl
+*.joblib
+
+# 데이터셋
+dataset/
+picture_model/
+
+
+# 구글 클라우드 인증 파일 (민감한 정보!)
+receipt-app-*.json
+.env
+.env.local
+
+# 로그 및 캐시
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 개발 환경
+.venv/
+venv/
+env/
+.vscode/
+.idea/
+.claude/
+
+# YOLO 결과물 및 남은 구폴더
+yolo_model/
+receipt_model/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-project
+*.sublime-workspace
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# 시스템 파일
+Thumbs.db
+.Spotlight-V100
+.Trashes

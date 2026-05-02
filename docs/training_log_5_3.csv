@@ -1,0 +1,456 @@
+ *  작업 실행 중: C:\Users\user\anaconda3\envs\project\python.exe 'c:\Users\All Users\바탕 화면\산학프로젝트\train_EfficientNet_V2-M.py' 
+
+🚀 NVIDIA GPU(CUDA)를 사용합니다.
+🔍 손상된 이미지 검사를 시작합니다...
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+✅ 검사 완료! 총 0개의 손상된 이미지가 제거되었습니다.
+
+✅ 학습 클래스 (35개): ['Bacon', 'Beansprout', 'Beef', 'BellPepper', 'Blueberry', 'Butter', 'Cheese', 'Chicken', 'ChiliPepper', 'ChiliPowder', 'Doenjang', 'Egg', 'Gochujang', 'GreenOnion', 'Ketchup', 'Kimchi', 'Lettuce', 'Mayonnaise', 'Milk', 'Mushroom', 'Mustard', 'OysterSauce', 'Pepper', 'Pork', 'Potato', 'Radish', 'Salt', 'Sausage', 'Shrimp', 'SoySauce', 'Spinach', 'Ssamjang', 'Sugar', 'Tofu', 'Vinegar']
+   - Train: 7315장 / Val: 1803장
+
+📊 클래스별 Train 이미지 수:
+   Bacon          : 113장
+   Beansprout     : 208장
+   Beef           : 240장
+   BellPepper     : 136장
+   Blueberry      : 296장
+   Butter         : 137장
+   Cheese         : 184장
+   Chicken        : 255장
+   ChiliPepper    : 245장
+   ChiliPowder    : 257장
+   Doenjang       : 276장
+   Egg            : 209장
+   Gochujang      : 211장
+   GreenOnion     : 239장
+   Ketchup        : 98장
+   Kimchi         : 241장
+   Lettuce        : 288장
+   Mayonnaise     : 102장
+   Milk           : 188장
+   Mushroom       : 371장
+   Mustard        : 74장
+   OysterSauce    : 256장
+   Pepper         : 215장
+   Pork           : 234장
+   Potato         : 297장
+   Radish         : 94장
+   Salt           : 182장
+   Sausage        : 247장
+   Shrimp         : 250장
+   SoySauce       : 162장
+   Spinach        : 224장
+   Ssamjang       : 160장
+   Sugar          : 114장
+   Tofu           : 233장
+   Vinegar        : 298장
+
+🤖 EfficientNet_V2-M 모델 로드 중...
+
+🔥 학습 시작!
+------------------------------
+Epoch 1/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 1.0912  Acc: 0.7111
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3982  Acc: 0.8735
+   🎉 최고 정확도 갱신! (Acc: 87.35%)
+------------------------------
+Epoch 2/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.3513  Acc: 0.9053
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3290  Acc: 0.9157
+   🎉 최고 정확도 갱신! (Acc: 91.57%)
+------------------------------
+Epoch 3/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.2195  Acc: 0.9389
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.2949  Acc: 0.9157
+   ⚠️ 성능 향상 없음 (1/5)
+------------------------------
+Epoch 4/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.1589  Acc: 0.9552
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3163  Acc: 0.9179
+   🎉 최고 정확도 갱신! (Acc: 91.79%)
+------------------------------
+Epoch 5/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.1282  Acc: 0.9646
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3814  Acc: 0.9024
+   ⚠️ 성능 향상 없음 (1/5)
+------------------------------
+Epoch 6/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.1029  Acc: 0.9718
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3383  Acc: 0.9168
+   ⚠️ 성능 향상 없음 (2/5)
+------------------------------
+Epoch 7/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.1101  Acc: 0.9680
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3248  Acc: 0.9212
+   🎉 최고 정확도 갱신! (Acc: 92.12%)
+------------------------------
+Epoch 8/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0588  Acc: 0.9832
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.2916  Acc: 0.9296
+   🎉 최고 정확도 갱신! (Acc: 92.96%)
+------------------------------
+Epoch 9/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0451  Acc: 0.9859
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.2909  Acc: 0.9329
+   🎉 최고 정확도 갱신! (Acc: 93.29%)
+------------------------------
+Epoch 10/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0356  Acc: 0.9888
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3079  Acc: 0.9290
+   ⚠️ 성능 향상 없음 (1/5)
+------------------------------
+Epoch 11/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0343  Acc: 0.9899
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3002  Acc: 0.9351
+   🎉 최고 정확도 갱신! (Acc: 93.51%)
+------------------------------
+Epoch 12/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0349  Acc: 0.9899
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.2904  Acc: 0.9390
+   🎉 최고 정확도 갱신! (Acc: 93.90%)
+------------------------------
+Epoch 13/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0381  Acc: 0.9892
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.2945  Acc: 0.9362
+   ⚠️ 성능 향상 없음 (1/5)
+------------------------------
+Epoch 14/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0226  Acc: 0.9944
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3265  Acc: 0.9312
+   ⚠️ 성능 향상 없음 (2/5)
+------------------------------
+Epoch 15/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0328  Acc: 0.9903
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3219  Acc: 0.9301
+   ⚠️ 성능 향상 없음 (3/5)
+------------------------------
+Epoch 16/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0255  Acc: 0.9925
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3320  Acc: 0.9290
+   ⚠️ 성능 향상 없음 (4/5)
+------------------------------
+Epoch 17/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0174  Acc: 0.9955
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3076  Acc: 0.9395
+   🎉 최고 정확도 갱신! (Acc: 93.95%)
+------------------------------
+Epoch 18/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0143  Acc: 0.9962
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3200  Acc: 0.9368
+   ⚠️ 성능 향상 없음 (1/5)
+------------------------------
+Epoch 19/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0177  Acc: 0.9952
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3304  Acc: 0.9346
+   ⚠️ 성능 향상 없음 (2/5)
+------------------------------
+Epoch 20/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0146  Acc: 0.9955
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3381  Acc: 0.9368
+   ⚠️ 성능 향상 없음 (3/5)
+------------------------------
+Epoch 21/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0131  Acc: 0.9952
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3214  Acc: 0.9384
+   ⚠️ 성능 향상 없음 (4/5)
+------------------------------
+Epoch 22/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0073  Acc: 0.9982
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3108  Acc: 0.9412
+   🎉 최고 정확도 갱신! (Acc: 94.12%)
+------------------------------
+Epoch 23/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0086  Acc: 0.9977
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3228  Acc: 0.9390
+   ⚠️ 성능 향상 없음 (1/5)
+------------------------------
+Epoch 24/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0096  Acc: 0.9964
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3120  Acc: 0.9395
+   ⚠️ 성능 향상 없음 (2/5)
+------------------------------
+Epoch 25/30
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0099  Acc: 0.9973
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3237  Acc: 0.9384
+   ⚠️ 성능 향상 없음 (3/5)
+------------------------------
+Epoch 26/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0084  Acc: 0.9971
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3286  Acc: 0.9379
+   ⚠️ 성능 향상 없음 (4/5)
+------------------------------
+Epoch 27/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0048  Acc: 0.9988
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3126  Acc: 0.9456
+   🎉 최고 정확도 갱신! (Acc: 94.56%)
+------------------------------
+Epoch 28/30
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0062  Acc: 0.9984
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3083  Acc: 0.9434
+   ⚠️ 성능 향상 없음 (1/5)
+------------------------------
+Epoch 29/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\TiffImagePlugin.py:949: UserWarning: Truncated File Read
+  warnings.warn(str(msg))
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0057  Acc: 0.9985
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3045  Acc: 0.9423
+   ⚠️ 성능 향상 없음 (2/5)
+------------------------------
+Epoch 30/30
+C:\Users\user\anaconda3\envs\project\lib\site-packages\PIL\Image.py:1137: UserWarning: Palette images with Transparency expressed in bytes should be converted to RGBA images
+  warnings.warn(
+    [TRAIN] Batch 458/458 - 데이터 로딩 중...
+  TRAIN Loss: 0.0053  Acc: 0.9985
+    [VAL] Batch 113/113 - 데이터 로딩 중...
+  VAL Loss: 0.3174  Acc: 0.9429
+   ⚠️ 성능 향상 없음 (3/5)
+------------------------------
+
+📊 클래스별 정확도 분석 중...
+
+=============================================
+클래스                정답    전체      정확도
+---------------------------------------------
+Pork               51    64    79.7% 🟩🟩🟩⬜⬜
+Cheese             37    46    80.4% 🟩🟩🟩🟩⬜
+Butter             18    21    85.7% 🟩🟩🟩🟩⬜
+Bacon              22    25    88.0% 🟩🟩🟩🟩⬜
+ChiliPepper        54    61    88.5% 🟩🟩🟩🟩⬜
+Sausage            54    61    88.5% 🟩🟩🟩🟩⬜
+Beef               52    58    89.7% 🟩🟩🟩🟩⬜
+Gochujang          49    54    90.7% 🟩🟩🟩🟩⬜
+Salt               41    45    91.1% 🟩🟩🟩🟩⬜
+Radish             21    23    91.3% 🟩🟩🟩🟩⬜
+OysterSauce        58    63    92.1% 🟩🟩🟩🟩⬜
+Beansprout         47    51    92.2% 🟩🟩🟩🟩⬜
+Ssamjang           37    40    92.5% 🟩🟩🟩🟩⬜
+BellPepper         32    34    94.1% 🟩🟩🟩🟩⬜
+Chicken            60    63    95.2% 🟩🟩🟩🟩⬜
+Ketchup            23    24    95.8% 🟩🟩🟩🟩⬜
+Mayonnaise         24    25    96.0% 🟩🟩🟩🟩⬜
+Egg                50    52    96.2% 🟩🟩🟩🟩⬜
+Pepper             51    53    96.2% 🟩🟩🟩🟩⬜
+Tofu               55    57    96.5% 🟩🟩🟩🟩⬜
+GreenOnion         57    59    96.6% 🟩🟩🟩🟩⬜
+ChiliPowder        61    63    96.8% 🟩🟩🟩🟩⬜
+Lettuce            69    71    97.2% 🟩🟩🟩🟩⬜
+SoySauce           39    40    97.5% 🟩🟩🟩🟩⬜
+Milk               45    46    97.8% 🟩🟩🟩🟩⬜
+Spinach            54    55    98.2% 🟩🟩🟩🟩⬜
+Doenjang           69    70    98.6% 🟩🟩🟩🟩⬜
+Blueberry          72    73    98.6% 🟩🟩🟩🟩⬜
+Potato             72    73    98.6% 🟩🟩🟩🟩⬜
+Vinegar            72    73    98.6% 🟩🟩🟩🟩⬜
+Mushroom           91    92    98.9% 🟩🟩🟩🟩⬜
+Kimchi             60    60   100.0% 🟩🟩🟩🟩🟩
+Mustard            18    18   100.0% 🟩🟩🟩🟩🟩
+Shrimp             62    62   100.0% 🟩🟩🟩🟩🟩
+Sugar              28    28   100.0% 🟩🟩🟩🟩🟩
+=============================================
+
+🏆 최종 최고 성능 → Acc: 94.56%  Loss: 0.3126
+⏱️  소요 시간: 67분 24초
+💾 모델 저장 완료: c:\Users\All Users\바탕 화면\best_food_model_v2_m_ver2.pth
+📝 학습 로그 저장 완료: c:\Users\All Users\바탕 화면\training_log.csv
+ *  터미널이 작업에서 다시 사용됩니다. 닫으려면 아무 키나 누르세요. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
