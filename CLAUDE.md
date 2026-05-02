@@ -29,7 +29,7 @@ cp .env.example .env
 
 ```bash
 # Food classification (single image prediction)
-python models/food_classifier/predict_V2-M.py
+python models/food_classifier/predict_V2_M.py
 
 # Receipt OCR
 python models/receipt_ocr/receipt_ocr.py
@@ -38,10 +38,10 @@ python models/receipt_ocr/receipt_ocr.py
 python models/object_detection/yolo_predict.py
 
 # Evaluate classifier on test set
-python models/food_classifier/test_V2-M.py
+python models/food_classifier/test_V2_M.py
 
 # Train food classifier (30 epochs max, early stopping at patience=5)
-python training/train_EfficientNet_V2-M.py
+python training/train_EfficientNet_V2_M.py
 ```
 
 ## Data Pipeline Scripts
@@ -60,7 +60,7 @@ python scripts/data_len.py      # Print class distribution stats
 ## Architecture
 
 ### Confidence-Based Fallback (Food Classifier)
-`models/food_classifier/predict_V2-M.py` implements a two-stage prediction:
+`models/food_classifier/predict_V2_M.py` implements a two-stage prediction:
 - EfficientNet V2-M is the primary model (loaded once via `load_food_model()`)
 - If softmax confidence < 75%, `gemini_predict()` is called with the full class list
 - Gemini predictions are auto-saved to `dataset/auto_labeled/{label}/` to improve future training
@@ -87,11 +87,11 @@ Training uses `WeightedRandomSampler` to handle class imbalance.
 
 | File | Purpose |
 |------|---------|
-| `models/food_classifier/predict_V2-M.py` | Main classifier with Gemini fallback |
-| `models/food_classifier/test_V2-M.py` | Per-class accuracy evaluation |
+| `models/food_classifier/predict_V2_M.py` | Main classifier with Gemini fallback |
+| `models/food_classifier/test_V2_M.py` | Per-class accuracy evaluation |
 | `models/receipt_ocr/receipt_ocr.py` | Document AI + Gemini OCR pipeline |
 | `models/object_detection/yolo_predict.py` | YOLOv8n inference |
-| `training/train_EfficientNet_V2-M.py` | Model training script |
+| `training/train_EfficientNet_V2_M.py` | Model training script |
 | `requirements.txt` | All Python dependencies |
 | `.env` | API credentials (not in git) |
 
