@@ -83,12 +83,12 @@ Type(Scope) : Description
 
 - Use **imperative mood**
 
-Correct:
+올바른 예시:
 
 Add(User) : 로그인 API 생성
 Fix(Token) : 폐기된 토큰 액세스 방지
 
-Incorrect:
+잘못된 예시:
 
 added login api
 fixing bug
@@ -117,43 +117,43 @@ create login
 
 #### Feat
 
-Feat(Auth) : Support social login
+Feat(Auth) : 소셜 로그인 기능 추가
 
 #### Fix
 
-Fix(Token) : Handle expired token case
+Fix(Token) : 만료된 토큰 처리 오류 수정
 
 #### Add
 
-Add(User) : Add signup DTO
+Add(User) : 회원가입 DTO 추가
 
 #### Remove
 
-Remove(Auth) : Delete legacy token util
+Remove(Auth) : 레거시 토큰 유틸 삭제
 
 #### Refactor
 
-Refactor(Bean) : Extract validation logic
+Refactor(Bean) : 유효성 검사 로직 분리
 
 #### Docs
 
-Docs(Readme) : Add setup instructions
+Docs(Readme) : 설치 방법 문서 추가
 
 #### Chore
 
-Chore(Gradle) : Update dependency version
+Chore(Gradle) : 의존성 버전 업데이트
 
 #### Test
 
-Test(User) : Add signup validation test
+Test(User) : 회원가입 유효성 테스트 추가
 
 #### Style
 
-Style(Api) : Reformat controller code
+Style(Api) : 컨트롤러 코드 포맷 정리
 
 #### Implement
 
-Implement(Receipt) : Apply OCR parsing logic
+Implement(Receipt) : OCR 파싱 로직 적용
 
 ---
 
@@ -228,14 +228,14 @@ Feat: Implement user signup flow
 
 ### One Commit = One Intention
 
-Good:
+올바른 예시:
 
-Add(Auth) : Create JWT provider
-Test(Auth) : Add JWT test
+Add(Auth) : JWT provider 생성
+Test(Auth) : JWT 테스트 추가
 
-Bad:
+잘못된 예시:
 
-Add(Auth) : Create JWT provider and fix test and update docs
+Add(Auth) : JWT provider 생성 및 테스트 수정 및 문서 업데이트
 
 ---
 
@@ -253,13 +253,13 @@ Avoid mixing:
 
 ### Be Specific
 
-Good:
+올바른 예시:
 
-Fix(Auth) : Reject malformed bearer token
+Fix(Auth) : 잘못된 형식의 bearer 토큰 거부
 
-Bad:
+잘못된 예시:
 
-Fix(Auth) : Fix issue
+Fix(Auth) : 오류 수정
 
 ---
 
