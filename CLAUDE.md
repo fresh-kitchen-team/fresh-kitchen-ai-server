@@ -13,8 +13,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Setup
 
 ```bash
-# Requires Python 3.10.19 (conda environment "project")
-conda activate project
+# Requires Python 3.10.19
+
 pip install -r requirements.txt
 
 # API keys (required for OCR and Gemini fallback)
@@ -76,7 +76,7 @@ All model scripts detect and prefer `mps` (Apple Silicon) → `cuda` → `cpu`. 
 ### Dataset Structure
 ```
 dataset/
-├── train/, val/, test/   # Class-separated folders (45 food classes)
+├── train/, val/, test/   # Class-separated folders (48 food classes)
 ├── crawldata/            # Raw Bing downloads
 └── auto_labeled/         # Gemini-labeled images (future training data)
 ```

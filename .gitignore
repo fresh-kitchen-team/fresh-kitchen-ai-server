@@ -9,6 +9,9 @@
 dataset/
 picture_model/
 
+# 데이터 수집/처리 스크립트
+scripts/
+
 
 # 구글 클라우드 인증 파일 (민감한 정보!)
 receipt-app-*.json
