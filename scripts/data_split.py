@@ -8,7 +8,7 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TRAIN_DIR = os.path.join(_BASE_DIR, 'dataset', 'train')
 VAL_DIR = os.path.join(_BASE_DIR, 'dataset', 'val')
 SPLIT_RATIO = 0.2 # 20%를 이동
-TARGET_CLASS = 'Mushroom'  # 👈 여기에 옮기고 싶은 폴더 이름을 적으세요!
+TARGET_CLASS = 'Onion'  # 👈 여기에 옮기고 싶은 폴더 이름을 적으세요!
 
 def split_specific_class(class_name):
     train_class_path = Path(TRAIN_DIR) / class_name
