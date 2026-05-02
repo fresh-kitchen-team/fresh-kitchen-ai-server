@@ -3,9 +3,18 @@ import tempfile
 import importlib.util
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Header, HTTPException
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
+from dotenv import load_dotenv
+
+load_dotenv()
+AI_SECRET_TOKEN = os.getenv("AI_SECRET_TOKEN")
+
+
+def verify_token(authorization: str = Header(...)):
+    if authorization != f"Bearer {AI_SECRET_TOKEN}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -56,7 +65,8 @@ def _tmp_file(upload: UploadFile, data: bytes) -> str:
 # 1. 음식 분류
 # ──────────────────────────────────────────
 @app.post("/internal/v1/food-classification")
-async def food_classification(file: UploadFile = File(...)):
+async def food_classification(file: UploadFile = File(...), authorization: str = Header(...)):
+    verify_token(authorization)
     tmp_path = _tmp_file(file, await file.read())
     try:
         result = predict_mod.predict_image(food_model, food_device, tmp_path, food_classes)
@@ -76,7 +86,8 @@ async def food_classification(file: UploadFile = File(...)):
 # 2. 영수증 OCR
 # ──────────────────────────────────────────
 @app.post("/internal/v1/receipt-ocr")
-async def receipt_ocr(file: UploadFile = File(...)):
+async def receipt_ocr(file: UploadFile = File(...), authorization: str = Header(...)):
+    verify_token(authorization)
     tmp_path = _tmp_file(file, await file.read())
     try:
         raw_items = ocr_mod.process_receipt_raw(tmp_path)
@@ -92,7 +103,8 @@ async def receipt_ocr(file: UploadFile = File(...)):
 # 3. 냉장고 물체 감지
 # ──────────────────────────────────────────
 @app.post("/internal/v1/fridge-detection")
-async def fridge_detection(file: UploadFile = File(...)):
+async def fridge_detection(file: UploadFile = File(...), authorization: str = Header(...)):
+    verify_token(authorization)
     tmp_path = _tmp_file(file, await file.read())
     try:
         results = yolo_model.predict(source=tmp_path, conf=0.25, verbose=False)
