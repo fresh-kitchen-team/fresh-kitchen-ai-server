@@ -25,6 +25,16 @@ cp .env.example .env
 # Place best_food_model_v2_m_ver2.pth in the project root
 ```
 
+## Running the Server
+
+```bash
+# Start FastAPI server (loads all models on startup)
+python3 -m uvicorn main:app --reload --port 8000
+
+# API docs: http://127.0.0.1:8000/docs
+# External access: ngrok http 8000
+```
+
 ## Running the Models
 
 ```bash
@@ -98,10 +108,15 @@ Training uses `WeightedRandomSampler` to handle class imbalance.
 ## Credentials & Secrets
 
 Never commit:
-- `.env` — contains `GEMINI_API_KEY` and Google Cloud project details
+- `.env` — contains `GEMINI_API_KEY`, `AI_SECRET_TOKEN`, and Google Cloud project details
 - `receipt-app-*.json` — Google Cloud service account key
 - `*.pth` / `*.pt` — model weight files (200 MB+)
 - `dataset/` — training images
+
+`AI_SECRET_TOKEN` is used for Bearer token authentication on all API endpoints. Generate with:
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
 
 `GOOGLE_APPLICATION_CREDENTIALS` in `.env` supports relative paths; the code expands them to absolute paths at runtime.
 
