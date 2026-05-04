@@ -2,6 +2,8 @@
 
 fresh-kitchen 프로젝트의 AI 서버 — 음식 이미지 분류, 영수증 OCR, 냉장고 물체 감지를 담당합니다.
 
+---
+
 ## 전체 시스템 흐름
 
 ```
@@ -31,15 +33,33 @@ EfficientNet V2-M / Document AI / YOLOv8n
 ### models/receipt_ocr — 영수증 OCR
 - **기술**: Google Cloud Document AI + Gemini API
 - 영수증 이미지 → 텍스트 추출 → 식재료 목록 반환
-- `receipt_ocr.py`
+- `receipt_ocr.py`: 영수증 OCR 처리
+- `receipt.png`, `receipt2.jpeg`: 테스트용 영수증 샘플
 
 ### models/object_detection — 냉장고 물체 감지
 - **모델**: YOLOv8n
 - 냉장고/음식 물품 탐지
-- `yolo_predict.py`
+- `yolo.py`: 단순 테스트용 (디버깅)
+- `yolo_predict.py`: 실제 추론용
 
 ### training — 모델 학습
 - `train_EfficientNet_V2_M.py`: EfficientNet V2-M 학습 (30 Epoch, Early Stopping patience=5)
+
+### scripts — 데이터 전처리 (Git 미포함)
+
+| 파일 | 역할 |
+|------|------|
+| `data_crawl.py` | Bing에서 음식 이미지 크롤링 |
+| `data_clean.py` | 중복/손상 이미지 제거 |
+| `data_split.py` | train/val 분할 |
+| `data_diet.py` | 클래스당 이미지 수 제한 |
+| `data_blurred.py` | 블러 처리 검증 데이터 생성 |
+| `data_len.py` | 데이터셋 현황 리포트 |
+
+### docs — 개발 문서
+- `git-convention.md`: 커밋 메시지 / 브랜치 / PR 컨벤션
+- `training_log_5_3.csv`: 모델 학습 로그
+- `상세개발계획서 AI담당.xlsx`: 개발 계획서
 
 ---
 
@@ -51,7 +71,7 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# .env 파일에 자신의 API 키 입력
+# .env 파일에 API 키와 Bearer 토큰 입력
 ```
 
 모델 가중치(`best_food_model_v2_m_ver2.pth`)는 Git에 포함되지 않습니다. 팀 드라이브에서 다운로드 후 프로젝트 루트에 저장하세요.
@@ -125,25 +145,42 @@ AI_SECRET_TOKEN=생성된_토큰값
 
 생성한 토큰을 백엔드 팀에게 전달하면 백엔드에서 모든 요청에 헤더로 포함하여 전송합니다.
 
+### 테스트 방법
+
+**Swagger UI** (브라우저)
+1. `http://127.0.0.1:8000/docs` 접속
+2. 우측 상단 **Authorize** 클릭 → 토큰 입력
+3. 엔드포인트 펼치고 **Try it out** → 이미지 업로드 → **Execute**
+
+**curl**
+```bash
+curl -X POST http://127.0.0.1:8000/internal/v1/food-classification \
+  -H "Authorization: Bearer {AI_SECRET_TOKEN}" \
+  -F "file=@picture_model/predict/beef1.jpeg"
+```
+
 ---
 
 ## 디렉토리 구조
 
 ```
 fresh-kitchen-ai-server/
-├── main.py                     # FastAPI 서버 진입점
+├── main.py                          # FastAPI 서버 진입점
+├── best_food_model_v2_m_ver2.pth    # 학습된 모델 (Git 미포함)
 ├── models/
-│   ├── food_classifier/        # EfficientNet + Gemini 혼합 분류
-│   ├── receipt_ocr/            # Document AI + Gemini OCR
-│   └── object_detection/       # YOLOv8 물체 감지
-├── training/                   # 모델 학습 스크립트
-├── scripts/                    # 데이터 전처리 유틸리티 (Git 미포함)
-├── yolo_model/                 # YOLOv8 모델 가중치 (Git 미포함)
-├── receipt_model/              # Google Cloud 인증 파일 (Git 미포함)
-├── picture_model/predict/      # 테스트용 이미지 샘플 (Git 미포함)
-├── docs/                       # 개발 문서 및 학습 로그
+│   ├── food_classifier/             # EfficientNet + Gemini 혼합 분류
+│   ├── receipt_ocr/                 # Document AI + Gemini OCR
+│   └── object_detection/            # YOLOv8 물체 감지
+├── training/                        # 모델 학습 스크립트
+├── scripts/                         # 데이터 전처리 유틸리티 (Git 미포함)
+├── yolo_model/                      # YOLOv8 모델 가중치 (Git 미포함)
+├── receipt_model/                   # Google Cloud 인증 파일 (Git 미포함)
+├── picture_model/predict/           # 테스트용 이미지 샘플 (Git 미포함)
+├── dataset/                         # 학습 데이터 (Git 미포함)
+├── docs/                            # 개발 문서 및 학습 로그
 ├── .env.example
 ├── requirements.txt
+├── CLAUDE.md                        # AI 에이전트 가이드
 └── README.md
 ```
 
@@ -154,18 +191,32 @@ fresh-kitchen-ai-server/
 다음 파일은 절대 Git에 올리지 마세요 (`.gitignore`에 자동 제외):
 
 - `receipt-app-*.json` — Google Cloud 서비스 계정 키
-- `.env` — API 키
+- `.env` — API 키 및 Bearer 토큰
 - `*.pth`, `*.pt` — 모델 가중치
 - `dataset/` — 학습 데이터
 - `scripts/` — 데이터 전처리 스크립트
+- `picture_model/` — 테스트 이미지
+- `yolo_model/`, `receipt_model/` — 모델 가중치 및 인증 파일
 
 ---
 
 ## 개발 환경
 
-- Python 3.10.19 / PyTorch 2.5.1 / TorchVision 0.20.1
-- FastAPI 0.135.1 / Uvicorn 0.42.0
-- Google Cloud Document AI, Gemini 2.5 Flash
-- Ultralytics YOLOv8
+- **Python**: 3.10.19 (conda 환경 권장)
+- **PyTorch**: 2.5.1 / TorchVision 0.20.1
+- **FastAPI**: 0.135.1 / Uvicorn 0.42.0
+- **Google Cloud**: Document AI / Gemini 2.5 Flash
+- **Ultralytics**: YOLOv8
 
 자세한 의존성은 `requirements.txt` 참조.
+
+---
+
+## Git 컨벤션
+
+커밋 / 브랜치 / PR 작성 규칙은 [`docs/git-convention.md`](docs/git-convention.md)를 참조하세요.
+
+요약:
+- 커밋: `Type(Scope) : 한국어 설명`
+- PR: `Type: Description` (영어, scope 없음)
+- 브랜치: `feat/domain-feature`
