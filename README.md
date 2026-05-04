@@ -56,6 +56,17 @@ EfficientNet V2-M / Document AI / YOLOv8n
 | `data_blurred.py` | 블러 처리 검증 데이터 생성 |
 | `data_len.py` | 데이터셋 현황 리포트 |
 
+#### 데이터 파이프라인 실행 순서
+
+```bash
+python scripts/data_crawl.py    # 1. 이미지 수집
+python scripts/data_clean.py    # 2. 중복/손상 제거
+python scripts/data_split.py    # 3. train/val 분할
+python scripts/data_diet.py     # 4. 개수 제한
+python scripts/data_blurred.py  # 5. 블러 검증 데이터 생성
+python scripts/data_len.py      # 6. 현황 리포트
+```
+
 ### docs — 개발 문서
 - `git-convention.md`: 커밋 메시지 / 브랜치 / PR 컨벤션
 - `training_log_5_3.csv`: 모델 학습 로그

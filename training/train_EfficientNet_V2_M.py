@@ -19,7 +19,7 @@ LEARNING_RATE = 1e-4
 EPOCHS = 30
 PATIENCE = 5
 SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver2.pth')
-LOG_PATH = os.path.join(_BASE_DIR, 'training_log.csv')
+LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log.csv')
 NUM_WORKERS = 0 # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
 
 def remove_corrupted_images(directory):
