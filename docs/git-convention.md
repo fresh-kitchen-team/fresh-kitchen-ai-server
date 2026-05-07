@@ -66,7 +66,7 @@ Type(Scope) : Description
   - uppercase first letter
 
 - `Description`
-  - short summary in English
+  - short summary in Korean
   - imperative form
   - no period at the end
 
@@ -212,8 +212,8 @@ Docs: Update branch strategy
 
 - smallest logical change unit
 
-Add(User) : Create signup DTO
-Fix(User) : Handle duplicate email
+Add(User) : 회원가입 DTO 생성
+Fix(User) : 중복 이메일 처리 오류 수정
 
 ### PR
 
