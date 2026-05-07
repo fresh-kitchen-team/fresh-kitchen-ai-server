@@ -214,8 +214,8 @@ fresh-kitchen-ai-server/
 ## 개발 환경
 
 - **Python**: 3.10.19 (conda 환경 권장)
-- **PyTorch**: 2.5.1 / TorchVision 0.20.1
-- **FastAPI**: 0.135.1 / Uvicorn 0.42.0
+- **PyTorch**: 2.11.0 / TorchVision 0.26.0
+- **FastAPI**: 0.136.1 / Uvicorn 0.46.0
 - **Google Cloud**: Document AI / Gemini 2.5 Flash
 - **Ultralytics**: YOLOv8
 
