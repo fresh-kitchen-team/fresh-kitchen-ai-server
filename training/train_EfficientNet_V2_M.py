@@ -156,7 +156,7 @@ def main():
     )
     # ReduceLROnPlateau: val_loss가 개선 없으면 lr 감소 (조기 종료와 완벽 호환)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.5, patience=3, verbose=True
+        optimizer, mode='min', factor=0.5, patience=3
     )
 
     # --------------------------------------
