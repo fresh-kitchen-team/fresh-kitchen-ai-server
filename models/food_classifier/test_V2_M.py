@@ -45,37 +45,42 @@ def main():
     test_dataset = datasets.ImageFolder(DATA_DIR, test_transform)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False,
                             num_workers=NUM_WORKERS)
-    
-    class_names = test_dataset.classes
-    print(f"\n📂 총 {len(class_names)}개 클래스의 테스트 이미지를 찾았습니다.")
-    print(f"   - 전체 테스트 이미지 수: {len(test_dataset)}장")
 
     # --------------------------------------
     # 4. 모델 불러오기
     # --------------------------------------
     print("\n🤖 모델을 불러오는 중...")
-    
-    # 1) 모델 구조 생성 (EfficientNet_V2-M)
-    model = models.efficientnet_v2_m(weights=None) # 껍데기만 가져옴 (Pretrained X)
 
-    # 2) 마지막 레이어 수정 (V2-M 구조에 맞게 - Dropout + Linear)
-    num_ftrs = model.classifier[1].in_features
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.3, inplace=False),
-        nn.Linear(num_ftrs, len(class_names))
-    )
-    
-    # 3) 저장된 가중치 로드
+    # 1) 체크포인트 먼저 로드해서 class_names 확보 (폴더 구조 의존 제거)
     try:
         checkpoint = torch.load(MODEL_PATH, map_location=device, weights_only=True)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        print("✅ EfficientNet V2-M 모델을 성공적으로 불러왔습니다!")
+        class_names = checkpoint['class_names']
+        print(f"\n📂 총 {len(class_names)}개 클래스의 테스트 이미지를 찾았습니다.")
+        print(f"   - 전체 테스트 이미지 수: {len(test_dataset)}장")
     except FileNotFoundError:
         print(f"❌ 오류: '{MODEL_PATH}' 파일을 찾을 수 없습니다.")
         print("   💡 먼저 train_EfficientNet_V2-M.py를 실행해서 모델을 학습해주세요.")
         return
     except Exception as e:
         print(f"❌ 모델 로드 중 오류 발생: {e}")
+        return
+
+    # 2) 모델 구조 생성 (EfficientNet_V2-M)
+    model = models.efficientnet_v2_m(weights=None)
+
+    # 3) 마지막 레이어 수정 (체크포인트 클래스 수 기준)
+    num_ftrs = model.classifier[1].in_features
+    model.classifier = nn.Sequential(
+        nn.Dropout(p=0.3, inplace=False),
+        nn.Linear(num_ftrs, len(class_names))
+    )
+
+    # 4) 가중치 적재
+    try:
+        model.load_state_dict(checkpoint['model_state_dict'])
+        print("✅ EfficientNet V2-M 모델을 성공적으로 불러왔습니다!")
+    except Exception as e:
+        print(f"❌ 가중치 로드 중 오류 발생: {e}")
         print("💡 팁: 학습할 때 클래스 개수와 테스트 폴더의 클래스 개수가 같은지 확인하세요.")
         return
 
@@ -106,7 +111,7 @@ def main():
             running_corrects += torch.sum(preds == labels.data)
 
             # 클래스별 정답 수
-            c = (preds == labels).squeeze()
+            c = (preds == labels).reshape(-1)
             for i in range(len(labels)):
                 label = labels[i]
                 class_correct[label] += c[i].item()
