@@ -21,7 +21,10 @@ SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
 # 1. 모델 준비 함수 (서버 켜질 때 딱 1번만 실행됨)
 # --------------------------------------
 def load_food_model(model_path: str):
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    device = torch.device(
+        "mps" if torch.backends.mps.is_available() else
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
     print(f"🚀 AI 장치 설정: {device}")
 
     try:
@@ -60,9 +63,10 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
 
-        mime_type = "image/jpeg"
-        if image_path.lower().endswith(".png"):
-            mime_type = "image/png"
+        import mimetypes
+        mime_type, _ = mimetypes.guess_type(image_path)
+        if mime_type is None:
+            mime_type = "image/jpeg"
 
         class_list_str = "\n".join(f"- {c}" for c in class_names)
         prompt = f"""
