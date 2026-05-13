@@ -25,25 +25,31 @@ EfficientNet V2-M / Document AI / Gemini Vision
 ## 구성
 
 ### models/food_classifier — 음식 이미지 분류
-- **모델**: EfficientNet V2-M (60개 클래스, Val Acc 94.56%)
+- **모델**: EfficientNet V2-M (60개 클래스, Val Acc **94.73%**)
 - 확신도 75% 이상 → EfficientNet 결과 반환
-- 확신도 75% 미만 → Gemini Vision으로 자동 위임
-- Gemini 분류 이미지는 `dataset/auto_labeled/`에 자동 저장 (self-improving)
+- 확신도 75% 미만 → Gemini Vision으로 자동 위임 (타임아웃 30초)
+- Gemini 분류 이미지는 `dataset/auto_labeled/`에 자동 저장 → 다음 학습 데이터로 활용 (self-improving)
 - `predict_V2_M.py`: 이미지 예측
 - `test_V2_M.py`: 모델 정확도 평가
 
 ### models/receipt_ocr — 영수증 OCR
-- **기술**: Google Cloud Document AI + Gemini API
-- 영수증 이미지 → 텍스트 추출 → 식재료 목록 반환
+- **기술**: Google Cloud Document AI + Gemini 2.5 Flash
+- **2단계 파이프라인**: Document AI로 텍스트 추출(한글만 보존) → Gemini로 식재료만 필터링
+- 브랜드명 제거, 중복 제거, 비식재료(합계·부가세·봉투 등) 자동 배제
 - `receipt_ocr.py`: 영수증 OCR 처리
 
 ### models/object_detection — 냉장고 식재료 감지
-- **기술**: Gemini Vision API
-- 냉장고 사진 → 식재료 목록 JSON 반환
+- **기술**: Gemini Vision 2.5 Flash
+- 냉장고 사진 → 식재료 목록 JSON 반환 (타임아웃 30초)
 - `fridge_detection.py`: 냉장고 식재료 감지
 
 ### training — 모델 학습
-- `train_EfficientNet_V2_M.py`: EfficientNet V2-M 학습 (30 Epoch, Early Stopping patience=5)
+- `train_EfficientNet_V2_M.py`: EfficientNet V2-M 학습 (최대 30 Epoch, Early Stopping patience=5)
+- ImageNet 사전학습 가중치 → 마지막 4개 블록만 파인튜닝
+- `WeightedRandomSampler`로 클래스 불균형 해소
+- Optimizer: AdamW / Scheduler: ReduceLROnPlateau (val_loss 기준 lr 자동 감소)
+- 스마트폰 환경 최적화 증강: RandomPerspective, ColorJitter, GaussianBlur 등 8종
+- 하드웨어 자동 감지: MPS (Apple Silicon) → CUDA → CPU
 
 ### scripts — 데이터 전처리 (Git 미포함)
 
