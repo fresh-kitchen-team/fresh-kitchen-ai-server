@@ -153,11 +153,11 @@ this table unless the task is specifically about that document.
 Allowed without extra user confirmation:
 
 - git diff/status analysis
-- selective staging
-- commit creation
 
 Not allowed unless the user explicitly asks:
 
+- selective staging
+- commit creation
 - git push
 - PR creation
 - merge
