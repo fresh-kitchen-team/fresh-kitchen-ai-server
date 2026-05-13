@@ -213,7 +213,6 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 # [Main 블록] 단독 실행 테스트용
 # ==========================================
 if __name__ == '__main__':
-    _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     TEST_MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
     TEST_IMAGE_PATH = os.path.join(_BASE_DIR, 'picture_model', 'predict', 'beef1.jpeg')
 

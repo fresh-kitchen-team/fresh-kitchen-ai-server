@@ -19,6 +19,7 @@ receipt-app-*.json
 .env.local
 
 # 로그 및 캐시
+*.log
 __pycache__/
 *.pyc
 *.pyo

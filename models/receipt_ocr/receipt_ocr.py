@@ -139,8 +139,7 @@ def filter_with_gemini(items: list) -> list:
         return []
 
 if __name__ == "__main__":
-    _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    TARGET_FILE = os.path.join(_BASE_DIR, 'receipt.png')
+    TARGET_FILE = os.path.join(str(_PROJECT_ROOT), 'test_real_image', 'receipt.png')
     
     raw_list = process_receipt_raw(TARGET_FILE)
     
