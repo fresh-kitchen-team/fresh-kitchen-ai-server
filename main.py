@@ -1,4 +1,5 @@
 import os
+import logging
 import tempfile
 import importlib.util
 from contextlib import asynccontextmanager
@@ -7,6 +8,19 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("server.log", encoding="utf-8"),
+    ]
+)
+logger = logging.getLogger("fresh-kitchen-ai")
+
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 AI_SECRET_TOKEN = os.getenv("AI_SECRET_TOKEN")
@@ -55,6 +69,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+def _validate_image(file: UploadFile, data: bytes):
+    if len(data) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="파일 크기는 10MB를 초과할 수 없습니다.")
+    content_type = (file.content_type or "").split(";")[0].strip()
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=415, detail="지원하지 않는 파일 형식입니다. (jpg, png, webp만 허용)")
+
+
 def _tmp_file(upload: UploadFile, data: bytes) -> str:
     suffix = os.path.splitext(upload.filename)[1] or ".jpg"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
@@ -67,11 +89,15 @@ def _tmp_file(upload: UploadFile, data: bytes) -> str:
 # ──────────────────────────────────────────
 @app.post("/internal/v1/food-classification")
 async def food_classification(file: UploadFile = File(...), _=Depends(verify_token)):
-    tmp_path = _tmp_file(file, await file.read())
+    data = await file.read()
+    _validate_image(file, data)
+    tmp_path = _tmp_file(file, data)
     try:
+        logger.info(f"[food-classification] 요청: {file.filename} ({len(data)} bytes)")
         result = predict_mod.predict_image(food_model, food_device, tmp_path, food_classes)
         if "error" in result:
             return JSONResponse(status_code=400, content={"error": result["error"]})
+        logger.info(f"[food-classification] 결과: {result['best_match']} ({result['source']})")
         return {
             "bestMatch": result["best_match"],
             "confidence": result["confidence"],
@@ -79,6 +105,7 @@ async def food_classification(file: UploadFile = File(...), _=Depends(verify_tok
             "source": result["source"],
         }
     except Exception as e:
+        logger.error(f"[food-classification] 오류: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
     finally:
         os.unlink(tmp_path)
@@ -89,12 +116,17 @@ async def food_classification(file: UploadFile = File(...), _=Depends(verify_tok
 # ──────────────────────────────────────────
 @app.post("/internal/v1/receipt-ocr")
 async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
-    tmp_path = _tmp_file(file, await file.read())
+    data = await file.read()
+    _validate_image(file, data)
+    tmp_path = _tmp_file(file, data)
     try:
+        logger.info(f"[receipt-ocr] 요청: {file.filename} ({len(data)} bytes)")
         raw_items = ocr_mod.process_receipt_raw(tmp_path)
         ingredients = ocr_mod.filter_with_gemini(raw_items) if raw_items else []
+        logger.info(f"[receipt-ocr] 결과: {len(ingredients)}개 식재료 추출")
         return {"ingredients": ingredients}
     except Exception as e:
+        logger.error(f"[receipt-ocr] 오류: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
     finally:
         os.unlink(tmp_path)
@@ -105,11 +137,16 @@ async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
 # ──────────────────────────────────────────
 @app.post("/internal/v1/fridge-detection")
 async def fridge_detection(file: UploadFile = File(...), _=Depends(verify_token)):
-    tmp_path = _tmp_file(file, await file.read())
+    data = await file.read()
+    _validate_image(file, data)
+    tmp_path = _tmp_file(file, data)
     try:
+        logger.info(f"[fridge-detection] 요청: {file.filename} ({len(data)} bytes)")
         items = fridge_mod.detect_fridge_items(tmp_path)
+        logger.info(f"[fridge-detection] 결과: {len(items)}개 식재료 감지")
         return {"items": items}
     except Exception as e:
+        logger.error(f"[fridge-detection] 오류: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
     finally:
         os.unlink(tmp_path)
