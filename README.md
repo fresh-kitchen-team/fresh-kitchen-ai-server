@@ -13,7 +13,7 @@ fresh-kitchen 프로젝트의 AI 서버 — 음식 이미지 분류, 영수증 O
     ↓ 이미지 + Bearer 토큰 전달
 AI 서버 (FastAPI) ← main.py
     ↓ 모델 추론
-EfficientNet V2-M / Document AI / YOLOv8n
+EfficientNet V2-M / Document AI / Gemini Vision
     ↓ JSON 반환
 백엔드 (Spring)
     ↓ DTO 변환 후 DB 저장 및 앱 응답
@@ -36,11 +36,10 @@ EfficientNet V2-M / Document AI / YOLOv8n
 - `receipt_ocr.py`: 영수증 OCR 처리
 - `receipt.png`, `receipt2.jpeg`: 테스트용 영수증 샘플
 
-### models/object_detection — 냉장고 물체 감지
-- **모델**: YOLOv8n
-- 냉장고/음식 물품 탐지
-- `yolo.py`: 단순 테스트용 (디버깅)
-- `yolo_predict.py`: 실제 추론용
+### models/object_detection — 냉장고 식재료 감지
+- **기술**: Gemini Vision API
+- 냉장고 사진 → 식재료 목록 JSON 반환
+- `fridge_detection.py`: 냉장고 식재료 감지
 
 ### training — 모델 학습
 - `train_EfficientNet_V2_M.py`: EfficientNet V2-M 학습 (30 Epoch, Early Stopping patience=5)
@@ -85,7 +84,7 @@ cp .env.example .env
 # .env 파일에 API 키와 Bearer 토큰 입력
 ```
 
-모델 가중치(`best_food_model_v2_m_ver2.pth`)는 Git에 포함되지 않습니다. 팀 드라이브에서 다운로드 후 프로젝트 루트에 저장하세요.
+모델 가중치(`best_food_model_v2_m_ver3.pth`)는 Git에 포함되지 않습니다. 팀 드라이브에서 다운로드 후 프로젝트 루트에 저장하세요.
 
 ---
 
@@ -120,8 +119,8 @@ python models/food_classifier/predict_V2_M.py
 # 영수증 분석
 python models/receipt_ocr/receipt_ocr.py
 
-# 냉장고 물체 감지
-python models/object_detection/yolo_predict.py
+# 냉장고 식재료 감지
+python models/object_detection/fridge_detection.py
 
 # 모델 정확도 평가
 python models/food_classifier/test_V2_M.py
@@ -138,7 +137,7 @@ python training/train_EfficientNet_V2_M.py
 |--------|----------|------|
 | POST | `/internal/v1/food-classification` | 식재료 이미지 분류 |
 | POST | `/internal/v1/receipt-ocr` | 영수증 OCR → 식재료 추출 |
-| POST | `/internal/v1/fridge-detection` | 냉장고 사진 물체 감지 |
+| POST | `/internal/v1/fridge-detection` | 냉장고 사진 식재료 감지 |
 
 모든 엔드포인트는 `multipart/form-data`로 이미지 파일을 받습니다.
 
@@ -177,14 +176,13 @@ curl -X POST http://127.0.0.1:8000/internal/v1/food-classification \
 ```
 fresh-kitchen-ai-server/
 ├── main.py                          # FastAPI 서버 진입점
-├── best_food_model_v2_m_ver2.pth    # 학습된 모델 (Git 미포함)
+├── best_food_model_v2_m_ver3.pth    # 학습된 모델 (Git 미포함)
 ├── models/
 │   ├── food_classifier/             # EfficientNet + Gemini 혼합 분류
 │   ├── receipt_ocr/                 # Document AI + Gemini OCR
-│   └── object_detection/            # YOLOv8 물체 감지
+│   └── object_detection/            # Gemini Vision 냉장고 식재료 감지
 ├── training/                        # 모델 학습 스크립트
 ├── scripts/                         # 데이터 전처리 유틸리티 (Git 미포함)
-├── yolo_model/                      # YOLOv8 모델 가중치 (Git 미포함)
 ├── receipt_model/                   # Google Cloud 인증 파일 (Git 미포함)
 ├── picture_model/predict/           # 테스트용 이미지 샘플 (Git 미포함)
 ├── dataset/                         # 학습 데이터 (Git 미포함)
@@ -207,7 +205,7 @@ fresh-kitchen-ai-server/
 - `dataset/` — 학습 데이터
 - `scripts/` — 데이터 전처리 스크립트
 - `picture_model/` — 테스트 이미지
-- `yolo_model/`, `receipt_model/` — 모델 가중치 및 인증 파일
+- `receipt_model/` — Google Cloud 인증 파일
 
 ---
 
@@ -217,7 +215,7 @@ fresh-kitchen-ai-server/
 - **PyTorch**: 2.11.0 / TorchVision 0.26.0
 - **FastAPI**: 0.136.1 / Uvicorn 0.46.0
 - **Google Cloud**: Document AI / Gemini 2.5 Flash
-- **Ultralytics**: YOLOv8
+- **Gemini Vision**: 냉장고 식재료 감지
 
 자세한 의존성은 `requirements.txt` 참조.
 

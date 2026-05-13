@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **Food Classifier** — EfficientNet V2-M identifies food items from images; falls back to Gemini Vision if confidence < 75%
 2. **Receipt OCR** — Google Document AI extracts text from receipt images; Gemini filters results to food items only
-3. **Object Detection** — YOLOv8n detects items in refrigerator photos
+3. **Fridge Detection** — Gemini Vision identifies food items in refrigerator photos
 
 ## Setup
 
@@ -22,7 +22,7 @@ cp .env.example .env
 # Fill in: GOOGLE_APPLICATION_CREDENTIALS, PROJECT_ID, PROCESSOR_ID, LOCATION, GEMINI_API_KEY
 
 # Model weights (not in git — obtain from team drive)
-# Place best_food_model_v2_m_ver2.pth in the project root
+# Place best_food_model_v2_m_ver3.pth in the project root
 ```
 
 ## Running the Server
@@ -38,19 +38,19 @@ python3 -m uvicorn main:app --reload --port 8000
 ## Running the Models
 
 ```bash
-# Food classification (single image prediction)
+# 음식 이미지 분류
 python models/food_classifier/predict_V2_M.py
 
-# Receipt OCR
+# 영수증 OCR
 python models/receipt_ocr/receipt_ocr.py
 
-# Refrigerator object detection
-python models/object_detection/yolo_predict.py
+# 냉장고 식재료 감지
+python models/object_detection/fridge_detection.py
 
-# Evaluate classifier on test set
+# 분류 모델 정확도 평가
 python models/food_classifier/test_V2_M.py
 
-# Train food classifier (30 epochs max, early stopping at patience=5)
+# 분류 모델 학습 (최대 30 epoch, early stopping patience=5)
 python training/train_EfficientNet_V2_M.py
 ```
 
@@ -81,7 +81,7 @@ python scripts/data_len.py      # Print class distribution stats
 - Stage 2: `filter_with_gemini()` sends extracted text to Gemini to keep only food items; forces JSON response via `response_mime_type="application/json"`
 
 ### Hardware Acceleration
-All model scripts detect and prefer `mps` (Apple Silicon) → `cuda` → `cpu`. Batch size is capped at 8 for MPS stability.
+Food Classifier와 Training 스크립트는 `mps` (Apple Silicon) → `cuda` → `cpu` 순으로 자동 감지. Batch size는 MPS 안정성을 위해 8로 제한. Fridge Detection은 Gemini API 호출 방식으로 하드웨어 가속 미적용.
 
 ### Dataset Structure
 ```
@@ -100,7 +100,7 @@ Training uses `WeightedRandomSampler` to handle class imbalance.
 | `models/food_classifier/predict_V2_M.py` | Main classifier with Gemini fallback |
 | `models/food_classifier/test_V2_M.py` | Per-class accuracy evaluation |
 | `models/receipt_ocr/receipt_ocr.py` | Document AI + Gemini OCR pipeline |
-| `models/object_detection/yolo_predict.py` | YOLOv8n inference |
+| `models/object_detection/fridge_detection.py` | Gemini Vision 냉장고 식재료 감지 |
 | `training/train_EfficientNet_V2_M.py` | Model training script |
 | `requirements.txt` | All Python dependencies |
 | `.env` | API credentials (not in git) |
