@@ -25,8 +25,10 @@ EfficientNet V2-M / Document AI / Gemini Vision
 ## 구성
 
 ### models/food_classifier — 음식 이미지 분류
-- **모델**: EfficientNet V2-M (48개 클래스, Val Acc 94.34%)
-- 확신도 75% 미만이면 Gemini Vision으로 자동 위임
+- **모델**: EfficientNet V2-M (60개 클래스, Val Acc 94.56%)
+- 확신도 75% 이상 → EfficientNet 결과 반환
+- 확신도 75% 미만 → Gemini Vision으로 자동 위임
+- Gemini 분류 이미지는 `dataset/auto_labeled/`에 자동 저장 (self-improving)
 - `predict_V2_M.py`: 이미지 예측
 - `test_V2_M.py`: 모델 정확도 평가
 
@@ -34,7 +36,6 @@ EfficientNet V2-M / Document AI / Gemini Vision
 - **기술**: Google Cloud Document AI + Gemini API
 - 영수증 이미지 → 텍스트 추출 → 식재료 목록 반환
 - `receipt_ocr.py`: 영수증 OCR 처리
-- `receipt.png`, `receipt2.jpeg`: 테스트용 영수증 샘플
 
 ### models/object_detection — 냉장고 식재료 감지
 - **기술**: Gemini Vision API
@@ -68,7 +69,8 @@ python scripts/data_len.py      # 6. 현황 리포트
 
 ### docs — 개발 문서
 - `git-convention.md`: 커밋 메시지 / 브랜치 / PR 컨벤션
-- `training_log_5_3.csv`: 모델 학습 로그
+- `training_log_5_3.csv`: ver2 모델 학습 로그
+- `training_log_5_13.csv`: ver3 모델 학습 로그
 - `상세개발계획서 AI담당.xlsx`: 개발 계획서
 
 ---
@@ -141,6 +143,10 @@ python training/train_EfficientNet_V2_M.py
 
 모든 엔드포인트는 `multipart/form-data`로 이미지 파일을 받습니다.
 
+**파일 업로드 제한**
+- 최대 크기: 10MB
+- 허용 형식: `jpg`, `png`, `webp`
+
 Bearer 토큰 인증 필요: `Authorization: Bearer {AI_SECRET_TOKEN}`
 
 ### Bearer 토큰 발급
@@ -154,6 +160,38 @@ AI_SECRET_TOKEN=생성된_토큰값
 ```
 
 생성한 토큰을 백엔드 팀에게 전달하면 백엔드에서 모든 요청에 헤더로 포함하여 전송합니다.
+
+### 응답 형식
+
+**POST /internal/v1/food-classification**
+```json
+{
+  "bestMatch": "Beef",
+  "confidence": 92.3,
+  "top3": [
+    {"name": "Beef", "confidence": 92.3},
+    {"name": "Pork", "confidence": 5.1},
+    {"name": "Chicken", "confidence": 2.6}
+  ],
+  "source": "efficientnet"
+}
+```
+> `source` 필드: `efficientnet` (직접 분류) / `gemini` (Gemini Vision 위임) / `efficientnet_fallback` (Gemini 실패 시 EfficientNet으로 복귀)
+> `source`가 `gemini`일 때 `top3`는 빈 배열 반환 (출처 불일치로 인한 의도적 설계)
+
+**POST /internal/v1/receipt-ocr**
+```json
+{
+  "ingredients": ["두부", "계란", "김치", "우유"]
+}
+```
+
+**POST /internal/v1/fridge-detection**
+```json
+{
+  "items": ["두부", "계란", "당근", "된장"]
+}
+```
 
 ### 테스트 방법
 
@@ -215,7 +253,6 @@ fresh-kitchen-ai-server/
 - **PyTorch**: 2.11.0 / TorchVision 0.26.0
 - **FastAPI**: 0.136.1 / Uvicorn 0.46.0
 - **Google Cloud**: Document AI / Gemini 2.5 Flash
-- **Gemini Vision**: 냉장고 식재료 감지
 
 자세한 의존성은 `requirements.txt` 참조.
 
