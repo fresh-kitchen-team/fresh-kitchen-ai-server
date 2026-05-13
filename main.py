@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from ultralytics import YOLO
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
@@ -32,14 +31,14 @@ def _load_module(name, rel_path):
 food_model = None
 food_device = None
 food_classes = None
-yolo_model = None
 predict_mod = None
 ocr_mod = None
+fridge_mod = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global food_model, food_device, food_classes, yolo_model, predict_mod, ocr_mod
+    global food_model, food_device, food_classes, predict_mod, ocr_mod, fridge_mod
 
     predict_mod = _load_module("predict_v2m", "models/food_classifier/predict_V2_M.py")
     food_model, food_device, food_classes = predict_mod.load_food_model(
@@ -48,7 +47,7 @@ async def lifespan(app: FastAPI):
 
     ocr_mod = _load_module("receipt_ocr", "models/receipt_ocr/receipt_ocr.py")
 
-    yolo_model = YOLO(os.path.join(_BASE_DIR, "yolo_model", "yolov8n.pt"))
+    fridge_mod = _load_module("fridge_detection", "models/object_detection/fridge_detection.py")
 
     yield
 
@@ -102,26 +101,14 @@ async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
 
 
 # ──────────────────────────────────────────
-# 3. 냉장고 물체 감지
+# 3. 냉장고 식재료 감지
 # ──────────────────────────────────────────
 @app.post("/internal/v1/fridge-detection")
 async def fridge_detection(file: UploadFile = File(...), _=Depends(verify_token)):
     tmp_path = _tmp_file(file, await file.read())
     try:
-        results = yolo_model.predict(source=tmp_path, conf=0.25, verbose=False)
-        objects = []
-        for result in results:
-            for box in result.boxes:
-                x1, y1, x2, y2 = box.xyxy[0].tolist()
-                objects.append({
-                    "name": yolo_model.names[int(box.cls)],
-                    "confidence": round(float(box.conf) * 100, 1),
-                    "box": {
-                        "x1": round(x1), "y1": round(y1),
-                        "x2": round(x2), "y2": round(y2),
-                    },
-                })
-        return {"objects": objects}
+        items = fridge_mod.detect_fridge_items(tmp_path)
+        return {"items": items}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
     finally:
