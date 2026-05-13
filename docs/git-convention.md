@@ -42,10 +42,10 @@ feat/domain-feature
 
 ### Examples
 
-feat/user-auth
-feat/bean-validation
-feat/ingredient-management
-feat/receipt-ocr-processing
+feat/food-classifier
+feat/receipt-ocr
+feat/fridge-detection
+feat/gemini-fallback
 
 ---
 
@@ -85,14 +85,14 @@ Type(Scope) : Description
 
 올바른 예시:
 
-Add(User) : 로그인 API 생성
-Fix(Token) : 폐기된 토큰 액세스 방지
+Add(Classifier) : 음식 분류 예측 함수 추가
+Fix(Ocr) : Gemini 응답 파싱 오류 수정
 
 잘못된 예시:
 
-added login api
+added classifier
 fixing bug
-create login
+create model
 
 ---
 
@@ -117,43 +117,43 @@ create login
 
 #### Feat
 
-Feat(Auth) : 소셜 로그인 기능 추가
+Feat(Classifier) : Gemini Vision 폴백 기능 추가
 
 #### Fix
 
-Fix(Token) : 만료된 토큰 처리 오류 수정
+Fix(Ocr) : Document AI 응답 파싱 오류 수정
 
 #### Add
 
-Add(User) : 회원가입 DTO 추가
+Add(Training) : 클래스별 정확도 분석 로직 추가
 
 #### Remove
 
-Remove(Auth) : 레거시 토큰 유틸 삭제
+Remove(Classifier) : 미사용 전처리 함수 삭제
 
 #### Refactor
 
-Refactor(Bean) : 유효성 검사 로직 분리
+Refactor(Server) : 모델 로딩 방식 lifespan으로 전환
 
 #### Docs
 
-Docs(Readme) : 설치 방법 문서 추가
+Docs(Readme) : API 엔드포인트 설명 추가
 
 #### Chore
 
-Chore(Gradle) : 의존성 버전 업데이트
+Chore(Model) : 모델 경로 ver3으로 업데이트
 
 #### Test
 
-Test(User) : 회원가입 유효성 테스트 추가
+Test(Classifier) : 클래스별 정확도 평가 스크립트 추가
 
 #### Style
 
-Style(Api) : 컨트롤러 코드 포맷 정리
+Style(Server) : 엔드포인트 주석 정리
 
 #### Implement
 
-Implement(Receipt) : OCR 파싱 로직 적용
+Implement(Detection) : YOLOv8n 물체 감지 로직 적용
 
 ---
 
@@ -163,16 +163,16 @@ Scope represents the main affected domain.
 
 #### Examples
 
-User
-Auth
-Bean
-Receipt
-Ingredient
-Fridge
+Classifier
+Ocr
+Detection
+Training
+Model
+Server
 Api
-Security
+Data
 Readme
-Gradle
+Chore
 
 #### Guidelines
 
@@ -199,10 +199,10 @@ Type: Description
 
 ### Examples
 
-Feat: Implement user signup flow
-Fix: Resolve token validation bug
-Refactor: Simplify bean validation logic
-Docs: Update branch strategy
+Feat: Add Gemini Vision fallback for food classifier
+Fix: Resolve Document AI response parsing error
+Refactor: Simplify model loading logic
+Docs: Update API endpoint description
 
 ---
 
@@ -212,15 +212,15 @@ Docs: Update branch strategy
 
 - smallest logical change unit
 
-Add(User) : 회원가입 DTO 생성
-Fix(User) : 중복 이메일 처리 오류 수정
+Add(Classifier) : 음식 분류 예측 함수 추가
+Fix(Ocr) : 영수증 한글 필터링 오류 수정
 
 ### PR
 
 - summarizes entire feature branch
 - uses no scope
 
-Feat: Implement user signup flow
+Feat: Add Gemini Vision fallback for food classifier
 
 ---
 
@@ -230,12 +230,12 @@ Feat: Implement user signup flow
 
 올바른 예시:
 
-Add(Auth) : JWT provider 생성
-Test(Auth) : JWT 테스트 추가
+Add(Classifier) : Gemini 폴백 함수 추가
+Test(Classifier) : 클래스별 정확도 평가 추가
 
 잘못된 예시:
 
-Add(Auth) : JWT provider 생성 및 테스트 수정 및 문서 업데이트
+Add(Classifier) : Gemini 폴백 추가 및 테스트 수정 및 문서 업데이트
 
 ---
 
@@ -255,11 +255,11 @@ Avoid mixing:
 
 올바른 예시:
 
-Fix(Auth) : 잘못된 형식의 bearer 토큰 거부
+Fix(Server) : 잘못된 형식의 Bearer 토큰 거부
 
 잘못된 예시:
 
-Fix(Auth) : 오류 수정
+Fix(Server) : 오류 수정
 
 ---
 
