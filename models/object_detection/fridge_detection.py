@@ -1,6 +1,8 @@
 import os
 import json
+import logging
 import mimetypes
+import concurrent.futures
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
@@ -9,12 +11,15 @@ from google.genai import types
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_TIMEOUT = 30  # seconds
+
+logger = logging.getLogger(__name__)
 
 
 def detect_fridge_items(image_path: str) -> list:
     """냉장고 사진에서 Gemini Vision으로 식재료 목록 추출"""
     if not GEMINI_API_KEY:
-        print("❌ GEMINI_API_KEY가 .env에 없습니다.")
+        logger.error("GEMINI_API_KEY가 .env에 없습니다.")
         return []
 
     try:
@@ -36,33 +41,52 @@ def detect_fridge_items(image_path: str) -> list:
 - 브랜드명은 제거하고 핵심 식품명만 써줘 (예: "풀무원 두부" → "두부")
 - 반드시 한글로 출력해줘
 - 확실하지 않은 것은 제외해줘
+- 같은 식재료는 중복 없이 하나만 써줘 (예: "계란"과 "달걀"은 "계란" 하나로)
 
 [출력 형식]
 반드시 아래 JSON 배열 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
 ["재료1", "재료2", "재료3"]
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                prompt
-            ],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
+        def _call():
+            return client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                    prompt
+                ],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                )
             )
-        )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_call)
+            try:
+                response = future.result(timeout=GEMINI_TIMEOUT)
+            except concurrent.futures.TimeoutError:
+                logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
+                return []
 
         items = json.loads(response.text)
         if not isinstance(items, list):
             return []
-        return items
+
+        # 중복 제거 (대소문자/공백 무시)
+        seen = set()
+        result = []
+        for item in items:
+            key = item.strip()
+            if key and key not in seen:
+                seen.add(key)
+                result.append(key)
+        return result
 
     except json.JSONDecodeError:
-        print("❌ JSON 파싱 오류")
+        logger.error("Gemini 응답 JSON 파싱 오류")
         return []
     except Exception as e:
-        print(f"❌ Gemini 냉장고 탐지 오류: {e}")
+        logger.error(f"Gemini 냉장고 탐지 오류: {e}")
         return []
 
 
