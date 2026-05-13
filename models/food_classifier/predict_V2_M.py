@@ -6,6 +6,7 @@ import os
 import shutil
 import json
 from datetime import datetime
+import mimetypes
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -63,7 +64,6 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
 
-        import mimetypes
         mime_type, _ = mimetypes.guess_type(image_path)
         if mime_type is None:
             mime_type = "image/jpeg"
@@ -181,7 +181,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
         return {
             "best_match": gemini_label,
             "confidence": confidence,
-            "top3": top3_list,
+            "top3": [],
             "source": "gemini",
             "gemini_reason": gemini_result.get("reason", ""),
             "auto_saved": saved_path
