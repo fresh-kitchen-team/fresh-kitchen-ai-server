@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
 
     predict_mod = _load_module("predict_v2m", "models/food_classifier/predict_V2_M.py")
     food_model, food_device, food_classes = predict_mod.load_food_model(
-        os.path.join(_BASE_DIR, "best_food_model_v2_m_ver2.pth")
+        os.path.join(_BASE_DIR, "best_food_model_v2_m_ver3.pth")
     )
 
     ocr_mod = _load_module("receipt_ocr", "models/receipt_ocr/receipt_ocr.py")
