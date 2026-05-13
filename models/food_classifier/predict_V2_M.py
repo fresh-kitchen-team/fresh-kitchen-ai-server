@@ -6,7 +6,9 @@ import os
 import shutil
 import json
 from datetime import datetime
+import logging
 import mimetypes
+import concurrent.futures
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -17,6 +19,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
 CONFIDENCE_THRESHOLD = 75.0
 SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
+GEMINI_TIMEOUT = 30  # seconds
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------
 # 1. 모델 준비 함수 (서버 켜질 때 딱 1번만 실행됨)
@@ -47,7 +52,7 @@ def load_food_model(model_path: str):
         return model, device, class_names
 
     except Exception as e:
-        print(f"❌ 모델 초기화 오류: {e}")
+        logger.error(f"모델 초기화 오류: {e}")
         return None, None, None
 
 # --------------------------------------
@@ -82,16 +87,25 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
 목록에 없는 것처럼 보여도 가장 유사한 클래스로 분류해줘.
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                prompt
-            ],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
+        def _call():
+            return client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                    prompt
+                ],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                )
             )
-        )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_call)
+            try:
+                response = future.result(timeout=GEMINI_TIMEOUT)
+            except concurrent.futures.TimeoutError:
+                logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
+                return {"error": "Gemini 타임아웃"}
 
         result = json.loads(response.text)
         return {
@@ -102,6 +116,7 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
     except json.JSONDecodeError:
         return {"error": "Gemini 응답 파싱 실패"}
     except Exception as e:
+        logger.error(f"Gemini 오류: {e}")
         return {"error": f"Gemini 오류: {e}"}
 
 # --------------------------------------

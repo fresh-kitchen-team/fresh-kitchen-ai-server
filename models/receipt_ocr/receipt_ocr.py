@@ -1,10 +1,12 @@
 import os
 import re
 import json
+import logging
+import mimetypes
+import concurrent.futures
 from google.cloud import documentai
 from google import genai
 from google.genai import types
-import mimetypes
 
 # ==========================================
 # [1. 설정 구역] 
@@ -26,13 +28,16 @@ project_id = os.getenv("PROJECT_ID")
 processor_id = os.getenv("PROCESSOR_ID")
 location = os.getenv("LOCATION")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_TIMEOUT = 30  # seconds
+
+logger = logging.getLogger(__name__)
 
 # ==========================================
 
 def process_receipt_raw(file_path: str) -> list:
     """1차 정제: Document AI로 텍스트 추출 후 오직 한글만 보존"""
     if not os.path.exists(file_path):
-        print(f"❌ 에러: 파일을 찾을 수 없습니다: {file_path}")
+        logger.error(f"파일을 찾을 수 없습니다: {file_path}")
         return []
 
     client = documentai.DocumentProcessorServiceClient()
@@ -48,7 +53,7 @@ def process_receipt_raw(file_path: str) -> list:
         raw_document = documentai.RawDocument(content=image_content, mime_type=mime_type)
         request = documentai.ProcessRequest(name=name, raw_document=raw_document)
 
-        print("⏳ [1/2] Document AI 스캔 및 1차 정제 중...")
+        logger.info("[1/2] Document AI 스캔 및 1차 정제 중...")
         result = client.process_document(request=request)
         
         raw_items = []
@@ -64,20 +69,20 @@ def process_receipt_raw(file_path: str) -> list:
 
         return list(dict.fromkeys(raw_items))  # 기존 return raw_items 대신 이걸로!
     except Exception as e:
-        print(f"❌ Document AI 처리 중 에러 발생: {e}")
+        logger.error(f"Document AI 처리 중 오류: {e}")
         return []
 
 def filter_with_gemini(items: list) -> list:
     """2차 정제: Gemini 2.5 Flash를 사용하여 식재료만 추출 (JSON 강제)"""
     if not items:
-        print("⚠️ 1차 필터링 결과가 비어있어 Gemini 호출을 건너뜁니다.")
+        logger.warning("1차 필터링 결과가 비어있어 Gemini 호출을 건너뜁니다.")
         return []
 
-    print("⏳ [2/2] Gemini LLM 2차 정제 중 (식재료만 추출)...")
+    logger.info("[2/2] Gemini LLM 2차 정제 중 (식재료만 추출)...")
     client = genai.Client(api_key=GEMINI_API_KEY)
-    
+
     items_str = "\n".join(f"- {item}" for item in items)
-    
+
     prompt = f"""
 너는 영수증 텍스트 정제 전문가야. 아래는 영수증에서 추출한 텍스트 목록이야.
 
@@ -101,29 +106,36 @@ def filter_with_gemini(items: list) -> list:
 [데이터]
 {items_str}
 """
-    
-    try:
-        # 💡 핵심 개선: response_mime_type을 강제하여 무조건 JSON 배열 형식으로만 응답받음
-        response = client.models.generate_content(
-            model="gemini-2.5-flash", 
+
+    def _call():
+        return client.models.generate_content(
+            model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
             )
         )
-        
-        # 마크다운 제거 로직 없이 바로 파싱 가능
+
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_call)
+            try:
+                response = future.result(timeout=GEMINI_TIMEOUT)
+            except concurrent.futures.TimeoutError:
+                logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
+                return []
+
         final_list = json.loads(response.text)
         if not isinstance(final_list, list):
-            print(f"❌ 예상치 못한 JSON 형식: {final_list}")
+            logger.error(f"예상치 못한 JSON 형식: {final_list}")
             return []
         return final_list
-        
+
     except json.JSONDecodeError:
-        print("❌ JSON 파싱 에러 발생.")
+        logger.error("Gemini 응답 JSON 파싱 오류")
         return []
     except Exception as e:
-        print(f"❌ Gemini 에러: {e}")
+        logger.error(f"Gemini 오류: {e}")
         return []
 
 if __name__ == "__main__":
