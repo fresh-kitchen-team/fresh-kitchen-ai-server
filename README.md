@@ -188,9 +188,11 @@ AI_SECRET_TOKEN=생성된_토큰값
 **POST /internal/v1/receipt-ocr**
 ```json
 {
+  "purchasedAt": "2026-05-13",
   "ingredients": ["두부", "계란", "김치", "우유"]
 }
 ```
+> `purchasedAt`: 영수증에서 날짜를 읽지 못한 경우 `null` 반환
 
 **POST /internal/v1/fridge-detection**
 ```json
