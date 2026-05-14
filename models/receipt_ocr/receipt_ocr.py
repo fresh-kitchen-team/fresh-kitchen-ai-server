@@ -34,11 +34,11 @@ logger = logging.getLogger(__name__)
 
 # ==========================================
 
-def process_receipt_raw(file_path: str) -> list:
-    """1차 정제: Document AI로 텍스트 추출 후 오직 한글만 보존"""
+def process_receipt_raw(file_path: str) -> dict:
+    """1차 정제: Document AI로 텍스트 추출 후 한글 품목 + 전체 OCR 텍스트 반환"""
     if not os.path.exists(file_path):
         logger.error(f"파일을 찾을 수 없습니다: {file_path}")
-        return []
+        return {}
 
     client = documentai.DocumentProcessorServiceClient()
     name = client.processor_path(project_id, location, processor_id)
@@ -55,7 +55,11 @@ def process_receipt_raw(file_path: str) -> list:
 
         logger.info("[1/2] Document AI 스캔 및 1차 정제 중...")
         result = client.process_document(request=request)
-        
+
+        # 전체 OCR 텍스트
+        ocr_text = result.document.text or ""
+
+        # 한글 품목만 추출
         raw_items = []
         for entity in result.document.entities:
             if entity.type_ == "line_item":
@@ -67,44 +71,49 @@ def process_receipt_raw(file_path: str) -> list:
                         if clean_text and len(clean_text) > 1:
                             raw_items.append(clean_text)
 
-        return list(dict.fromkeys(raw_items))  # 기존 return raw_items 대신 이걸로!
+        return {
+            "raw_items": list(dict.fromkeys(raw_items)),
+            "ocr_text": ocr_text,
+        }
     except Exception as e:
         logger.error(f"Document AI 처리 중 오류: {e}")
-        return []
+        return {}
 
-def filter_with_gemini(items: list) -> list:
-    """2차 정제: Gemini 2.5 Flash를 사용하여 식재료만 추출 (JSON 강제)"""
-    if not items:
+
+def filter_with_gemini(raw_data: dict) -> dict:
+    """2차 정제: Gemini 2.5 Flash로 매장명·날짜·식재료 추출 (JSON 강제)"""
+    raw_items = raw_data.get("raw_items", [])
+    ocr_text = raw_data.get("ocr_text", "")  # Gemini 프롬프트용 (응답에는 미포함)
+
+    if not raw_items and not ocr_text:
         logger.warning("1차 필터링 결과가 비어있어 Gemini 호출을 건너뜁니다.")
-        return []
+        return {"storeName": None, "purchasedAt": None, "ingredients": []}
 
-    logger.info("[2/2] Gemini LLM 2차 정제 중 (식재료만 추출)...")
+    logger.info("[2/2] Gemini LLM 2차 정제 중 (매장명·날짜·식재료 추출)...")
     client = genai.Client(api_key=GEMINI_API_KEY)
 
-    items_str = "\n".join(f"- {item}" for item in items)
+    items_str = "\n".join(f"- {item}" for item in raw_items)
 
     prompt = f"""
-너는 영수증 텍스트 정제 전문가야. 아래는 영수증에서 추출한 텍스트 목록이야.
+너는 영수증 분석 전문가야. 아래 영수증 전체 텍스트와 품목 목록을 보고 JSON으로 답해줘.
+
+[영수증 전체 텍스트]
+{ocr_text}
+
+[추출된 품목 목록]
+{items_str}
 
 [할 일]
-이 중에서 실제 식재료, 식품, 음료만 골라내줘.
-
-[제외 항목]
-- 카드명, 포인트, 환불, 할인, 과세매출, 합계, 부가세, 매장명
-- 봉투, 비닐백 등 포장재/서비스
-- 의미를 알 수 없는 파편화된 단어
-
-[변환 규칙]
-- 브랜드명은 제거하고 핵심 식품명만 남겨줘. (예: "CJ 비비고 만두" → "만두", "풀무원 두부" → "두부")
-- 반드시 한글로 출력해줘.
-- 중복된 항목은 하나만 남겨줘.
+1. 매장명(storeName): 영수증에서 가게 이름을 추출해. 없으면 null.
+2. 구매일(purchasedAt): 날짜를 YYYY-MM-DD 형식으로 추출해. 없으면 null.
+3. 식재료(ingredients): 품목 목록에서 실제 식재료·식품·음료만 골라내줘.
+   - 브랜드명 제거 (예: "CJ 비비고 만두" → "만두", "풀무원 두부" → "두부")
+   - 카드명, 포인트, 환불, 할인, 합계, 부가세, 봉투 등 비식재료 제외
+   - 중복 제거, 반드시 한글로 출력
 
 [출력 형식]
-반드시 아래 JSON 배열 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
-["재료1", "재료2", "재료3"]
-
-[데이터]
-{items_str}
+반드시 아래 JSON 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
+{{"storeName": "매장명 또는 null", "purchasedAt": "YYYY-MM-DD 또는 null", "ingredients": ["재료1", "재료2"]}}
 """
 
     def _call():
@@ -123,38 +132,42 @@ def filter_with_gemini(items: list) -> list:
                 response = future.result(timeout=GEMINI_TIMEOUT)
             except concurrent.futures.TimeoutError:
                 logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-                return []
+                return {"storeName": None, "purchasedAt": None, "ingredients": []}
 
-        final_list = json.loads(response.text)
-        if not isinstance(final_list, list):
-            logger.error(f"예상치 못한 JSON 형식: {final_list}")
-            return []
-        return final_list
+        parsed = json.loads(response.text)
+        if not isinstance(parsed, dict):
+            logger.error(f"예상치 못한 JSON 형식: {parsed}")
+            return {"storeName": None, "purchasedAt": None, "ingredients": []}
+
+        return {
+            "storeName": parsed.get("storeName"),
+            "purchasedAt": parsed.get("purchasedAt"),
+            "ingredients": parsed.get("ingredients", []),
+        }
 
     except json.JSONDecodeError:
         logger.error("Gemini 응답 JSON 파싱 오류")
-        return []
+        return {"storeName": None, "purchasedAt": None, "ingredients": []}
     except Exception as e:
         logger.error(f"Gemini 오류: {e}")
-        return []
+        return {"storeName": None, "purchasedAt": None, "ingredients": []}
+
 
 if __name__ == "__main__":
-    TARGET_FILE = os.path.join(str(_PROJECT_ROOT), 'test_real_image', 'receipt.png')
-    
-    raw_list = process_receipt_raw(TARGET_FILE)
-    
-    if raw_list:
+    TARGET_FILE = os.path.join(str(_PROJECT_ROOT), 'dataset', 'test_real_image', 'receipt.png')
+
+    raw_data = process_receipt_raw(TARGET_FILE)
+
+    if raw_data:
         print(f"\n🔍 [1차 필터링 결과] (한글만 추출):")
-        print(raw_list)
-        
-        final_list = filter_with_gemini(raw_list)
-        
-        print(f"\n✨ [최종 식재료 리스트] ✨\n" + "-"*30)
-        if isinstance(final_list, list) and final_list:
-            for food in final_list: 
-                print(f"📍 {food}")
-        else:
-            print("추출된 식재료가 없거나 파싱에 실패했습니다.")
+        print(raw_data["raw_items"])
+
+        result = filter_with_gemini(raw_data)
+
+        print(f"\n✨ [최종 분석 결과] ✨\n" + "-"*30)
+        print(f"🏪 매장명: {result['storeName']}")
+        print(f"📅 구매일: {result['purchasedAt']}")
+        print(f"🥦 식재료: {result['ingredients']}")
         print("-" * 30)
     else:
         print("영수증에서 유효한 글자를 찾지 못했습니다.")

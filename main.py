@@ -121,10 +121,14 @@ async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
     tmp_path = _tmp_file(file, data)
     try:
         logger.info(f"[receipt-ocr] 요청: {file.filename} ({len(data)} bytes)")
-        raw_items = ocr_mod.process_receipt_raw(tmp_path)
-        ingredients = ocr_mod.filter_with_gemini(raw_items) if raw_items else []
-        logger.info(f"[receipt-ocr] 결과: {len(ingredients)}개 식재료 추출")
-        return {"ingredients": ingredients}
+        raw_data = ocr_mod.process_receipt_raw(tmp_path)
+        result = ocr_mod.filter_with_gemini(raw_data) if raw_data else {"storeName": None, "purchasedAt": None, "ingredients": []}
+        logger.info(f"[receipt-ocr] 결과: {len(result['ingredients'])}개 식재료 / 매장: {result['storeName']} / 날짜: {result['purchasedAt']}")
+        return {
+            "storeName": result["storeName"],
+            "purchasedAt": result["purchasedAt"],
+            "ingredients": result["ingredients"],
+        }
     except Exception as e:
         logger.error(f"[receipt-ocr] 오류: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
