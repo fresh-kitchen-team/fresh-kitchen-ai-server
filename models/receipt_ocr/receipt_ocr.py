@@ -81,18 +81,18 @@ def process_receipt_raw(file_path: str) -> dict:
 
 
 def filter_with_gemini(raw_data: dict) -> dict:
-    """2차 정제: Gemini 2.5 Flash로 매장명·날짜·식재료 추출 (JSON 강제)"""
+    """2차 정제: Gemini 2.5 Flash로 날짜·식재료 추출 (JSON 강제)"""
     raw_items = raw_data.get("raw_items", [])
     ocr_text = raw_data.get("ocr_text", "")  # Gemini 프롬프트용 (응답에는 미포함)
 
     if not raw_items and not ocr_text:
         logger.warning("1차 필터링 결과가 비어있어 Gemini 호출을 건너뜁니다.")
-        return {"storeName": None, "purchasedAt": None, "ingredients": []}
+        return {"purchasedAt": None, "ingredients": []}
 
-    logger.info("[2/2] Gemini LLM 2차 정제 중 (매장명·날짜·식재료 추출)...")
+    logger.info("[2/2] Gemini LLM 2차 정제 중 (날짜·식재료 추출)...")
     client = genai.Client(api_key=GEMINI_API_KEY)
 
-    items_str = "\n".join(f"- {item}" for item in raw_items)
+    items_str = "\n".join(f"- {item}" for item in raw_items) if raw_items else "(품목 목록 없음 — 전체 텍스트에서 직접 추출)"
 
     prompt = f"""
 너는 영수증 분석 전문가야. 아래 영수증 전체 텍스트와 품목 목록을 보고 JSON으로 답해줘.
@@ -104,16 +104,15 @@ def filter_with_gemini(raw_data: dict) -> dict:
 {items_str}
 
 [할 일]
-1. 매장명(storeName): 영수증에서 가게 이름을 추출해. 없으면 null.
-2. 구매일(purchasedAt): 날짜를 YYYY-MM-DD 형식으로 추출해. 없으면 null.
-3. 식재료(ingredients): 품목 목록에서 실제 식재료·식품·음료만 골라내줘.
+1. 구매일(purchasedAt): 날짜를 YYYY-MM-DD 형식으로 추출해. 없으면 null.
+2. 식재료(ingredients): 품목 목록이 있으면 거기서, 없으면 전체 텍스트에서 실제 식재료·식품·음료만 골라내줘.
    - 브랜드명 제거 (예: "CJ 비비고 만두" → "만두", "풀무원 두부" → "두부")
    - 카드명, 포인트, 환불, 할인, 합계, 부가세, 봉투 등 비식재료 제외
    - 중복 제거, 반드시 한글로 출력
 
 [출력 형식]
 반드시 아래 JSON 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
-{{"storeName": "매장명 또는 null", "purchasedAt": "YYYY-MM-DD 또는 null", "ingredients": ["재료1", "재료2"]}}
+{{"purchasedAt": "YYYY-MM-DD 또는 null", "ingredients": ["재료1", "재료2"]}}
 """
 
     def _call():
@@ -132,25 +131,24 @@ def filter_with_gemini(raw_data: dict) -> dict:
                 response = future.result(timeout=GEMINI_TIMEOUT)
             except concurrent.futures.TimeoutError:
                 logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-                return {"storeName": None, "purchasedAt": None, "ingredients": []}
+                return {"purchasedAt": None, "ingredients": []}
 
         parsed = json.loads(response.text)
         if not isinstance(parsed, dict):
             logger.error(f"예상치 못한 JSON 형식: {parsed}")
-            return {"storeName": None, "purchasedAt": None, "ingredients": []}
+            return {"purchasedAt": None, "ingredients": []}
 
         return {
-            "storeName": parsed.get("storeName"),
             "purchasedAt": parsed.get("purchasedAt"),
             "ingredients": parsed.get("ingredients", []),
         }
 
     except json.JSONDecodeError:
         logger.error("Gemini 응답 JSON 파싱 오류")
-        return {"storeName": None, "purchasedAt": None, "ingredients": []}
+        return {"purchasedAt": None, "ingredients": []}
     except Exception as e:
         logger.error(f"Gemini 오류: {e}")
-        return {"storeName": None, "purchasedAt": None, "ingredients": []}
+        return {"purchasedAt": None, "ingredients": []}
 
 
 if __name__ == "__main__":
@@ -165,7 +163,6 @@ if __name__ == "__main__":
         result = filter_with_gemini(raw_data)
 
         print(f"\n✨ [최종 분석 결과] ✨\n" + "-"*30)
-        print(f"🏪 매장명: {result['storeName']}")
         print(f"📅 구매일: {result['purchasedAt']}")
         print(f"🥦 식재료: {result['ingredients']}")
         print("-" * 30)

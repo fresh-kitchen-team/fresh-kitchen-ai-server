@@ -122,10 +122,9 @@ async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
     try:
         logger.info(f"[receipt-ocr] 요청: {file.filename} ({len(data)} bytes)")
         raw_data = ocr_mod.process_receipt_raw(tmp_path)
-        result = ocr_mod.filter_with_gemini(raw_data) if raw_data else {"storeName": None, "purchasedAt": None, "ingredients": []}
-        logger.info(f"[receipt-ocr] 결과: {len(result['ingredients'])}개 식재료 / 매장: {result['storeName']} / 날짜: {result['purchasedAt']}")
+        result = ocr_mod.filter_with_gemini(raw_data) if raw_data else {"purchasedAt": None, "ingredients": []}
+        logger.info(f"[receipt-ocr] 결과: {len(result['ingredients'])}개 식재료 / 날짜: {result['purchasedAt']}")
         return {
-            "storeName": result["storeName"],
             "purchasedAt": result["purchasedAt"],
             "ingredients": result["ingredients"],
         }
