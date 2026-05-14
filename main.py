@@ -1,13 +1,16 @@
 import os
 import logging
 import tempfile
-import importlib.util
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
+
+from models.food_classifier.predict_V2_M import load_food_model, predict_image
+from models.receipt_ocr.receipt_ocr import process_receipt_raw, filter_with_gemini
+from models.object_detection.fridge_detection import detect_fridge_items
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,36 +36,18 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-
-def _load_module(name, rel_path):
-    spec = importlib.util.spec_from_file_location(name, os.path.join(_BASE_DIR, rel_path))
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-# 전역 모델/모듈 변수
+# 전역 모델 변수
 food_model = None
 food_device = None
 food_classes = None
-predict_mod = None
-ocr_mod = None
-fridge_mod = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global food_model, food_device, food_classes, predict_mod, ocr_mod, fridge_mod
-
-    predict_mod = _load_module("predict_v2m", "models/food_classifier/predict_V2_M.py")
-    food_model, food_device, food_classes = predict_mod.load_food_model(
+    global food_model, food_device, food_classes
+    food_model, food_device, food_classes = load_food_model(
         os.path.join(_BASE_DIR, "best_food_model_v2_m_ver3.pth")
     )
-
-    ocr_mod = _load_module("receipt_ocr", "models/receipt_ocr/receipt_ocr.py")
-
-    fridge_mod = _load_module("fridge_detection", "models/object_detection/fridge_detection.py")
-
     yield
 
 
@@ -72,8 +57,18 @@ app = FastAPI(lifespan=lifespan)
 def _validate_image(file: UploadFile, data: bytes):
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="파일 크기는 10MB를 초과할 수 없습니다.")
+
     content_type = (file.content_type or "").split(";")[0].strip()
     if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=415, detail="지원하지 않는 파일 형식입니다. (jpg, png, webp만 허용)")
+
+    # Content-Type 헤더는 클라이언트가 임의로 설정할 수 있으므로 실제 바이트로 검증
+    if len(data) < 12:
+        raise HTTPException(status_code=415, detail="지원하지 않는 파일 형식입니다. (jpg, png, webp만 허용)")
+    is_jpeg = data[:3] == b'\xff\xd8\xff'
+    is_png  = data[:4] == b'\x89PNG'
+    is_webp = data[:4] == b'RIFF' and data[8:12] == b'WEBP'
+    if not (is_jpeg or is_png or is_webp):
         raise HTTPException(status_code=415, detail="지원하지 않는 파일 형식입니다. (jpg, png, webp만 허용)")
 
 
@@ -94,7 +89,7 @@ async def food_classification(file: UploadFile = File(...), _=Depends(verify_tok
     tmp_path = _tmp_file(file, data)
     try:
         logger.info(f"[food-classification] 요청: {file.filename} ({len(data)} bytes)")
-        result = predict_mod.predict_image(food_model, food_device, tmp_path, food_classes)
+        result = predict_image(food_model, food_device, tmp_path, food_classes)
         if "error" in result:
             return JSONResponse(status_code=400, content={"error": result["error"]})
         logger.info(f"[food-classification] 결과: {result['best_match']} ({result['source']})")
@@ -121,8 +116,8 @@ async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
     tmp_path = _tmp_file(file, data)
     try:
         logger.info(f"[receipt-ocr] 요청: {file.filename} ({len(data)} bytes)")
-        raw_data = ocr_mod.process_receipt_raw(tmp_path)
-        result = ocr_mod.filter_with_gemini(raw_data) if raw_data else {"purchasedAt": None, "ingredients": []}
+        raw_data = process_receipt_raw(tmp_path)
+        result = filter_with_gemini(raw_data) if raw_data else {"purchasedAt": None, "ingredients": []}
         logger.info(f"[receipt-ocr] 결과: {len(result['ingredients'])}개 식재료 / 날짜: {result['purchasedAt']}")
         return {
             "purchasedAt": result["purchasedAt"],
@@ -145,7 +140,7 @@ async def fridge_detection(file: UploadFile = File(...), _=Depends(verify_token)
     tmp_path = _tmp_file(file, data)
     try:
         logger.info(f"[fridge-detection] 요청: {file.filename} ({len(data)} bytes)")
-        items = fridge_mod.detect_fridge_items(tmp_path)
+        items = detect_fridge_items(tmp_path)
         logger.info(f"[fridge-detection] 결과: {len(items)}개 식재료 감지")
         return {"items": items}
     except Exception as e:
