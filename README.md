@@ -498,13 +498,12 @@ torch.save({
 
 ### 학습 로그
 
-에폭마다 `docs/training_log.csv`에 아래 컬럼을 기록합니다.
+학습이 끝나면 두 개의 CSV가 저장됩니다.
 
-```
-epoch, train_loss, train_acc, val_loss, val_acc, lr, Class1, Class2, ...
-```
-
-`Class1, Class2, ...`는 학습 클래스 목록 전체로, 각 값은 해당 에폭의 val 정확도(%)입니다. 클래스별 학습 곡선을 에폭 단위로 추적할 수 있습니다.
+| 파일 | 내용 |
+|---|---|
+| `docs/training_log.csv` | 에폭별 `train_loss, train_acc, val_loss, val_acc, lr` |
+| `docs/training_log_class_accuracy.csv` | 베스트 모델 기준 클래스별 `correct, total, accuracy` |
 
 ---
 

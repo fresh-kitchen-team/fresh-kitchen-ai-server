@@ -168,11 +168,10 @@ def main():
     best_loss_for_log = float('inf')
     patience_check = 0
 
-    # CSV 로그 초기화 (클래스별 val 정확도 컬럼 포함)
-    csv_header = ['epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'lr'] + class_names
+    # CSV 로그 초기화
     with open(LOG_PATH, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(csv_header)
+        writer.writerow(['epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'lr'])
 
     print(f"\n🔥 학습 시작!")
     print("-" * 30)
@@ -187,11 +186,6 @@ def main():
             running_loss = 0.0
             running_corrects = 0
             num_batches = len(dataloaders[phase])
-
-            # val 페이즈에서만 클래스별 정확도 추적
-            if phase == 'val':
-                class_correct_ep = {cls: 0 for cls in class_names}
-                class_total_ep   = {cls: 0 for cls in class_names}
 
             for batch_idx, (inputs, labels) in enumerate(dataloaders[phase]):
                 print(f'    [{phase.upper()}] Batch {batch_idx + 1}/{num_batches} - 데이터 로딩 중...', end='\r', flush=True)
@@ -212,14 +206,6 @@ def main():
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
 
-                if phase == 'val':
-                    correct_mask = (preds == labels)
-                    for i in range(len(labels)):
-                        cls = class_names[labels[i].item()]
-                        class_total_ep[cls] += 1
-                        if correct_mask[i]:
-                            class_correct_ep[cls] += 1
-
                 # 진행 상황 출력 (매 배치마다)
                 print(f'    [{phase.upper()}] Batch {batch_idx + 1}/{num_batches}', end='\r', flush=True)
 
@@ -235,13 +221,6 @@ def main():
                 current_lr = optimizer.param_groups[0]['lr']
                 epoch_log['lr'] = current_lr
 
-                # 클래스별 val 정확도 기록
-                epoch_log['class_acc'] = {
-                    cls: round(class_correct_ep[cls] / class_total_ep[cls] * 100, 1)
-                    if class_total_ep[cls] > 0 else None
-                    for cls in class_names
-                }
-
                 # Scheduler는 val_loss 기준으로 lr 조정
                 scheduler.step(epoch_loss)
 
@@ -256,16 +235,14 @@ def main():
                     patience_check += 1
                     print(f"   ⚠️ 성능 향상 없음 ({patience_check}/{PATIENCE})")
 
-        # CSV에 epoch 결과 기록 (클래스별 val 정확도 포함)
-        class_acc_row = [epoch_log['class_acc'].get(cls) for cls in class_names]
+        # CSV에 epoch 결과 기록
         with open(LOG_PATH, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([
                 epoch_log['epoch'],
                 epoch_log['train_loss'], epoch_log['train_acc'],
                 epoch_log['val_loss'],   epoch_log['val_acc'],
-                epoch_log['lr'],
-                *class_acc_row
+                epoch_log['lr']
             ])
 
         if patience_check >= PATIENCE:
@@ -312,6 +289,17 @@ def main():
 
     print("="*45)
 
+    # 클래스별 정확도 CSV 저장 (베스트 모델 기준)
+    class_acc_log_path = LOG_PATH.replace('.csv', '_class_accuracy.csv')
+    with open(class_acc_log_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['class', 'correct', 'total', 'accuracy'])
+        for cls in sorted_classes:
+            total   = class_total[cls]
+            correct = class_correct[cls]
+            acc = round(correct / total * 100, 2) if total > 0 else 0.0
+            writer.writerow([cls, correct, total, acc])
+
     # --------------------------------------
     # 10. 결과 저장
     # --------------------------------------
@@ -325,6 +313,7 @@ def main():
     }, SAVE_PATH)
     print(f"💾 모델 저장 완료: {SAVE_PATH}")
     print(f"📝 학습 로그 저장 완료: {LOG_PATH}")
+    print(f"📝 클래스별 정확도 저장 완료: {class_acc_log_path}")
 
 if __name__ == '__main__':
     main()
