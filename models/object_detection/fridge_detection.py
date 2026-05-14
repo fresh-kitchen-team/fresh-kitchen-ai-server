@@ -27,8 +27,6 @@ def detect_fridge_items(image_path: str) -> list:
         return []
 
     try:
-        client = _gemini_client
-
         with open(image_path, "rb") as f:
             image_bytes = f.read()
 
@@ -53,7 +51,7 @@ def detect_fridge_items(image_path: str) -> list:
 """
 
         def _call():
-            return client.models.generate_content(
+            return _gemini_client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[
                     types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
