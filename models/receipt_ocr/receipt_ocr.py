@@ -28,20 +28,34 @@ project_id = os.getenv("PROJECT_ID")
 processor_id = os.getenv("PROCESSOR_ID")
 location = os.getenv("LOCATION")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_TIMEOUT = 30  # seconds
+GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
 
+# 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
+_docai_client = None
+try:
+    _docai_client = documentai.DocumentProcessorServiceClient()
+except Exception as e:
+    logger.warning(f"Document AI 클라이언트 초기화 실패: {e}")
+
+_gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
 # ==========================================
+
 
 def process_receipt_raw(file_path: str) -> dict:
     """1차 정제: Document AI로 텍스트 추출 후 한글 품목 + 전체 OCR 텍스트 반환"""
+    if not _docai_client:
+        logger.error("Document AI 클라이언트가 초기화되지 않았습니다.")
+        return {}
+
     if not os.path.exists(file_path):
         logger.error(f"파일을 찾을 수 없습니다: {file_path}")
         return {}
 
-    client = documentai.DocumentProcessorServiceClient()
-    name = client.processor_path(project_id, location, processor_id)
+    name = _docai_client.processor_path(project_id, location, processor_id)
 
     try:
         with open(file_path, "rb") as image:
@@ -54,7 +68,7 @@ def process_receipt_raw(file_path: str) -> dict:
         request = documentai.ProcessRequest(name=name, raw_document=raw_document)
 
         logger.info("[1/2] Document AI 스캔 및 1차 정제 중...")
-        result = client.process_document(request=request)
+        result = _docai_client.process_document(request=request)
 
         # 전체 OCR 텍스트
         ocr_text = result.document.text or ""
@@ -83,14 +97,17 @@ def process_receipt_raw(file_path: str) -> dict:
 def filter_with_gemini(raw_data: dict) -> dict:
     """2차 정제: Gemini 2.5 Flash로 날짜·식재료 추출 (JSON 강제)"""
     raw_items = raw_data.get("raw_items", [])
-    ocr_text = raw_data.get("ocr_text", "")  # Gemini 프롬프트용 (응답에는 미포함)
+    ocr_text = raw_data.get("ocr_text", "")
 
     if not raw_items and not ocr_text:
         logger.warning("1차 필터링 결과가 비어있어 Gemini 호출을 건너뜁니다.")
         return {"purchasedAt": None, "ingredients": []}
 
+    if not _gemini_client:
+        logger.error("Gemini 클라이언트가 초기화되지 않았습니다.")
+        return {"purchasedAt": None, "ingredients": []}
+
     logger.info("[2/2] Gemini LLM 2차 정제 중 (날짜·식재료 추출)...")
-    client = genai.Client(api_key=GEMINI_API_KEY)
 
     items_str = "\n".join(f"- {item}" for item in raw_items) if raw_items else "(품목 목록 없음 — 전체 텍스트에서 직접 추출)"
 
@@ -116,7 +133,7 @@ def filter_with_gemini(raw_data: dict) -> dict:
 """
 
     def _call():
-        return client.models.generate_content(
+        return _gemini_client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -125,13 +142,13 @@ def filter_with_gemini(raw_data: dict) -> dict:
         )
 
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_call)
-            try:
-                response = future.result(timeout=GEMINI_TIMEOUT)
-            except concurrent.futures.TimeoutError:
-                logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-                return {"purchasedAt": None, "ingredients": []}
+        future = _executor.submit(_call)
+        try:
+            response = future.result(timeout=GEMINI_TIMEOUT)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
+            return {"purchasedAt": None, "ingredients": []}
 
         parsed = json.loads(response.text)
         if not isinstance(parsed, dict):

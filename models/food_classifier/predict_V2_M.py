@@ -19,9 +19,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
 CONFIDENCE_THRESHOLD = 75.0
 SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
-GEMINI_TIMEOUT = 30  # seconds
+GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
+
+# 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
+_gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # --------------------------------------
 # 1. 모델 준비 함수 (서버 켜질 때 딱 1번만 실행됨)
@@ -31,7 +35,7 @@ def load_food_model(model_path: str):
         "mps" if torch.backends.mps.is_available() else
         "cuda" if torch.cuda.is_available() else "cpu"
     )
-    print(f"🚀 AI 장치 설정: {device}")
+    logger.info(f"AI 장치 설정: {device}")
 
     try:
         model = models.efficientnet_v2_m(weights=None)
@@ -47,7 +51,7 @@ def load_food_model(model_path: str):
         model.load_state_dict(checkpoint['model_state_dict'])
         model.to(device)
         model.eval()
-        print("✅ 식재료 인식 모델이 메모리에 로드되었습니다!")
+        logger.info("식재료 인식 모델이 메모리에 로드되었습니다.")
 
         return model, device, class_names
 
@@ -60,12 +64,10 @@ def load_food_model(model_path: str):
 # --------------------------------------
 def gemini_predict(image_path: str, class_names: list) -> dict:
     """EfficientNet이 확신 못할 때 Gemini Vision이 대신 판단"""
-    if not GEMINI_API_KEY:
+    if not _gemini_client:
         return {"error": "GEMINI_API_KEY가 .env에 없습니다."}
 
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-
         with open(image_path, "rb") as f:
             image_bytes = f.read()
 
@@ -88,7 +90,7 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
 """
 
         def _call():
-            return client.models.generate_content(
+            return _gemini_client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[
                     types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
@@ -99,13 +101,13 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
                 )
             )
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_call)
-            try:
-                response = future.result(timeout=GEMINI_TIMEOUT)
-            except concurrent.futures.TimeoutError:
-                logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-                return {"error": "Gemini 타임아웃"}
+        future = _executor.submit(_call)
+        try:
+            response = future.result(timeout=GEMINI_TIMEOUT)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
+            return {"error": "Gemini 타임아웃"}
 
         result = json.loads(response.text)
         return {
@@ -123,7 +125,7 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
 # 3. 자동 저장 함수 (Self-improving 핵심)
 # --------------------------------------
 def save_to_dataset(image_path: str, class_name: str):
-    """Gemini가 분류한 이미지를 crawldata에 자동 저장"""
+    """Gemini가 분류한 이미지를 auto_labeled에 자동 저장"""
     try:
         save_folder = os.path.join(SAVE_DIR, class_name)
         os.makedirs(save_folder, exist_ok=True)
@@ -133,11 +135,11 @@ def save_to_dataset(image_path: str, class_name: str):
         save_path = os.path.join(save_folder, f"auto_{timestamp}{ext}")
 
         shutil.copy2(image_path, save_path)
-        print(f"💾 자동 저장: {save_path}")
+        logger.info(f"자동 저장: {save_path}")
         return save_path
 
     except Exception as e:
-        print(f"⚠️ 저장 실패: {e}")
+        logger.error(f"자동 저장 실패: {e}")
         return None
 
 # --------------------------------------
@@ -176,13 +178,12 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
             for i in range(3)
         ]
 
-    # confidence가 낮으면 Gemini에게 위임
     if confidence < CONFIDENCE_THRESHOLD:
-        print(f"🤔 확신도 낮음 ({confidence}%) → Gemini에게 질문 중...")
+        logger.info(f"확신도 낮음 ({confidence}%) → Gemini 폴백")
         gemini_result = gemini_predict(image_path, class_names)
 
         if "error" in gemini_result:
-            print(f"⚠️ Gemini 실패: {gemini_result['error']} → EfficientNet 결과 사용")
+            logger.warning(f"Gemini 실패: {gemini_result['error']} → EfficientNet 결과 사용")
             return {
                 "best_match": best_class,
                 "confidence": confidence,

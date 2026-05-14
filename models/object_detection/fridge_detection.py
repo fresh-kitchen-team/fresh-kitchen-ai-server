@@ -11,19 +11,23 @@ from google.genai import types
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_TIMEOUT = 30  # seconds
+GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
+
+# 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
+_gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 
 def detect_fridge_items(image_path: str) -> list:
     """냉장고 사진에서 Gemini Vision으로 식재료 목록 추출"""
-    if not GEMINI_API_KEY:
+    if not _gemini_client:
         logger.error("GEMINI_API_KEY가 .env에 없습니다.")
         return []
 
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        client = _gemini_client
 
         with open(image_path, "rb") as f:
             image_bytes = f.read()
@@ -60,19 +64,19 @@ def detect_fridge_items(image_path: str) -> list:
                 )
             )
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_call)
-            try:
-                response = future.result(timeout=GEMINI_TIMEOUT)
-            except concurrent.futures.TimeoutError:
-                logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-                return []
+        future = _executor.submit(_call)
+        try:
+            response = future.result(timeout=GEMINI_TIMEOUT)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
+            return []
 
         items = json.loads(response.text)
         if not isinstance(items, list):
             return []
 
-        # 중복 제거 (대소문자/공백 무시)
+        # 중복 제거 (공백 기준)
         seen = set()
         result = []
         for item in items:
