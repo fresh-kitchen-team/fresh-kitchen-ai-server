@@ -112,7 +112,7 @@ def filter_with_gemini(raw_data: dict) -> dict:
 
 [출력 형식]
 반드시 아래 JSON 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
-{{"purchasedAt": "YYYY-MM-DD 또는 null", "ingredients": ["재료1", "재료2"]}}
+{{"purchasedAt": "2026-05-13", "ingredients": ["재료1", "재료2"]}} 또는 날짜 없을 때: {{"purchasedAt": null, "ingredients": ["재료1", "재료2"]}}
 """
 
     def _call():
