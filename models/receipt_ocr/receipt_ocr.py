@@ -4,15 +4,15 @@ import json
 import logging
 import mimetypes
 import concurrent.futures
+from pathlib import Path
+from dotenv import load_dotenv
 from google.cloud import documentai
 from google import genai
 from google.genai import types
 
 # ==========================================
-# [1. 설정 구역] 
+# [1. 설정 구역]
 # ==========================================
-from dotenv import load_dotenv
-from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
@@ -138,8 +138,12 @@ def filter_with_gemini(raw_data: dict) -> dict:
             logger.error(f"예상치 못한 JSON 형식: {parsed}")
             return {"purchasedAt": None, "ingredients": []}
 
+        purchased_at = parsed.get("purchasedAt")
+        if not purchased_at or not re.match(r'^\d{4}-\d{2}-\d{2}$', str(purchased_at)):
+            purchased_at = None
+
         return {
-            "purchasedAt": parsed.get("purchasedAt"),
+            "purchasedAt": purchased_at,
             "ingredients": parsed.get("ingredients", []),
         }
 
