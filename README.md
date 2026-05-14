@@ -1,6 +1,6 @@
 # fresh-kitchen-ai-server
 
-fresh-kitchen 프로젝트의 AI 서버 — 음식 이미지 분류, 영수증 OCR, 냉장고 물체 감지를 담당합니다.
+fresh-kitchen 프로젝트의 AI 서버 — 음식 이미지 분류, 영수증 OCR, 냉장고 식재료 감지를 담당합니다.
 
 ---
 
@@ -36,11 +36,14 @@ EfficientNet V2-M / Document AI / Gemini Vision
 - **기술**: Google Cloud Document AI + Gemini 2.5 Flash
 - **2단계 파이프라인**: Document AI로 텍스트 추출(한글만 보존) → Gemini로 날짜·식재료 추출
 - 브랜드명 제거, 중복 제거, 비식재료(합계·부가세·봉투 등) 자동 배제
+- 잘못 인식된 텍스트(예: "참오" → "참외")는 Gemini가 문맥으로 자동 교정
+- `purchasedAt` 날짜 형식 검증 (YYYY-MM-DD 아니면 `null` 반환)
 - `receipt_ocr.py`: 영수증 OCR 처리
 
 ### models/object_detection — 냉장고 식재료 감지
 - **기술**: Gemini Vision 2.5 Flash
 - 냉장고 사진 → 식재료 목록 JSON 반환 (타임아웃 30초)
+- 중복 제거 (프롬프트 + 코드 2중 처리)
 - `fridge_detection.py`: 냉장고 식재료 감지
 
 ### training — 모델 학습
@@ -75,8 +78,8 @@ python scripts/data_len.py      # 6. 현황 리포트
 
 ### docs — 개발 문서
 - `git-convention.md`: 커밋 메시지 / 브랜치 / PR 컨벤션
-- `training_log_5_3.csv`: ver2 모델 학습 로그
-- `training_log_5_13.csv`: ver3 모델 학습 로그
+- `training_log_5_3.csv`: ver2 모델 학습 로그 (35클래스, CUDA)
+- `training_log_5_13.csv`: ver3 모델 학습 로그 (60클래스, MPS)
 - `상세개발계획서 AI담당.xlsx`: 개발 계획서
 
 ---
@@ -143,9 +146,9 @@ python training/train_EfficientNet_V2_M.py
 
 | Method | Endpoint | 설명 |
 |--------|----------|------|
-| POST | `/internal/v1/food-classification` | 식재료 이미지 분류 |
+| POST | `/internal/v1/food-classification` | 음식 이미지 → 식재료 분류 |
 | POST | `/internal/v1/receipt-ocr` | 영수증 OCR → 날짜·식재료 추출 |
-| POST | `/internal/v1/fridge-detection` | 냉장고 사진 식재료 감지 |
+| POST | `/internal/v1/fridge-detection` | 냉장고 사진 → 식재료 감지 |
 
 모든 엔드포인트는 `multipart/form-data`로 이미지 파일을 받습니다.
 
@@ -167,9 +170,13 @@ AI_SECRET_TOKEN=생성된_토큰값
 
 생성한 토큰을 백엔드 팀에게 전달하면 백엔드에서 모든 요청에 헤더로 포함하여 전송합니다.
 
-### 응답 형식
+---
 
-**POST /internal/v1/food-classification**
+## 응답 형식
+
+### POST /internal/v1/food-classification
+
+**정상 응답 (EfficientNet 직접 분류)**
 ```json
 {
   "bestMatch": "Beef",
@@ -182,26 +189,103 @@ AI_SECRET_TOKEN=생성된_토큰값
   "source": "efficientnet"
 }
 ```
-> `source` 필드: `efficientnet` (직접 분류) / `gemini` (Gemini Vision 위임) / `efficientnet_fallback` (Gemini 실패 시 EfficientNet으로 복귀)
-> `source`가 `gemini`일 때 `top3`는 빈 배열 반환 (출처 불일치로 인한 의도적 설계)
 
-**POST /internal/v1/receipt-ocr**
+**정상 응답 (Gemini Vision 위임 — 확신도 75% 미만)**
+```json
+{
+  "bestMatch": "Beef",
+  "confidence": 62.1,
+  "top3": [],
+  "source": "gemini"
+}
+```
+
+**정상 응답 (Gemini 실패 → EfficientNet 결과 사용)**
+```json
+{
+  "bestMatch": "Beef",
+  "confidence": 62.1,
+  "top3": [
+    {"name": "Beef", "confidence": 62.1},
+    {"name": "Pork", "confidence": 20.3},
+    {"name": "Chicken", "confidence": 10.5}
+  ],
+  "source": "efficientnet_fallback"
+}
+```
+
+> `source` 필드 값 정리
+> - `efficientnet`: EfficientNet이 직접 분류 (확신도 ≥ 75%)
+> - `gemini`: Gemini Vision이 분류 (확신도 < 75%), `top3`는 빈 배열
+> - `efficientnet_fallback`: Gemini 호출 실패 시 EfficientNet 결과로 대체
+
+---
+
+### POST /internal/v1/receipt-ocr
+
+**정상 응답**
 ```json
 {
   "purchasedAt": "2026-05-13",
   "ingredients": ["두부", "계란", "김치", "우유"]
 }
 ```
-> `purchasedAt`: 영수증에서 날짜를 읽지 못한 경우 `null` 반환
 
-**POST /internal/v1/fridge-detection**
+**날짜 인식 실패 시**
+```json
+{
+  "purchasedAt": null,
+  "ingredients": ["두부", "계란", "김치", "우유"]
+}
+```
+
+**전체 인식 실패 시**
+```json
+{
+  "purchasedAt": null,
+  "ingredients": []
+}
+```
+
+> - `purchasedAt`: 항상 `YYYY-MM-DD` 형식 또는 `null` (형식이 다르면 자동으로 `null` 처리)
+> - `ingredients`: 항상 배열 — 실패해도 `null`이 아닌 빈 배열 `[]` 반환
+
+---
+
+### POST /internal/v1/fridge-detection
+
+**정상 응답**
 ```json
 {
   "items": ["두부", "계란", "당근", "된장"]
 }
 ```
 
-### 테스트 방법
+**인식 실패 시**
+```json
+{
+  "items": []
+}
+```
+
+---
+
+## 에러 응답
+
+모든 엔드포인트 공통:
+
+| HTTP 코드 | 원인 | 응답 예시 |
+|-----------|------|-----------|
+| `401 Unauthorized` | Bearer 토큰 없거나 틀림 | `{"detail": "Unauthorized"}` |
+| `413 Request Entity Too Large` | 파일 크기 10MB 초과 | `{"detail": "파일 크기는 10MB를 초과할 수 없습니다."}` |
+| `415 Unsupported Media Type` | jpg/png/webp 외 파일 형식 | `{"detail": "지원하지 않는 파일 형식입니다. (jpg, png, webp만 허용)"}` |
+| `500 Internal Server Error` | 모델 추론 오류 | `{"error": "오류 메시지"}` |
+
+> nginx 앞단 사용 시 413은 nginx에서 먼저 발생할 수 있습니다. `client_max_body_size` 설정 확인 필요.
+
+---
+
+## 테스트 방법
 
 **Swagger UI** (브라우저)
 1. `http://127.0.0.1:8000/docs` 접속
@@ -212,7 +296,7 @@ AI_SECRET_TOKEN=생성된_토큰값
 ```bash
 curl -X POST http://127.0.0.1:8000/internal/v1/food-classification \
   -H "Authorization: Bearer {AI_SECRET_TOKEN}" \
-  -F "file=@picture_model/predict/beef1.jpeg"
+  -F "file=@이미지파일.jpg"
 ```
 
 ---
@@ -223,6 +307,7 @@ curl -X POST http://127.0.0.1:8000/internal/v1/food-classification \
 fresh-kitchen-ai-server/
 ├── main.py                          # FastAPI 서버 진입점
 ├── best_food_model_v2_m_ver3.pth    # 학습된 모델 (Git 미포함)
+├── server.log                       # 서버 로그 (런타임 생성)
 ├── models/
 │   ├── food_classifier/             # EfficientNet + Gemini 혼합 분류
 │   ├── receipt_ocr/                 # Document AI + Gemini OCR
@@ -232,6 +317,9 @@ fresh-kitchen-ai-server/
 ├── receipt_model/                   # Google Cloud 인증 파일 (Git 미포함)
 ├── picture_model/predict/           # 테스트용 이미지 샘플 (Git 미포함)
 ├── dataset/                         # 학습 데이터 (Git 미포함)
+│   ├── train/, val/, test/          # 클래스별 분류 이미지
+│   ├── auto_labeled/                # Gemini 자동 라벨링 이미지 (self-improving)
+│   └── test_real_image/             # 단독 실행 테스트용 이미지
 ├── docs/                            # 개발 문서 및 학습 로그
 ├── .env.example
 ├── requirements.txt
