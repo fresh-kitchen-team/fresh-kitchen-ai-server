@@ -34,7 +34,7 @@ EfficientNet V2-M / Document AI / Gemini Vision
 
 ### models/receipt_ocr — 영수증 OCR
 - **기술**: Google Cloud Document AI + Gemini 2.5 Flash
-- **2단계 파이프라인**: Document AI로 텍스트 추출(한글만 보존) → Gemini로 식재료만 필터링
+- **2단계 파이프라인**: Document AI로 텍스트 추출(한글만 보존) → Gemini로 날짜·식재료 추출
 - 브랜드명 제거, 중복 제거, 비식재료(합계·부가세·봉투 등) 자동 배제
 - `receipt_ocr.py`: 영수증 OCR 처리
 
@@ -144,7 +144,7 @@ python training/train_EfficientNet_V2_M.py
 | Method | Endpoint | 설명 |
 |--------|----------|------|
 | POST | `/internal/v1/food-classification` | 식재료 이미지 분류 |
-| POST | `/internal/v1/receipt-ocr` | 영수증 OCR → 식재료 추출 |
+| POST | `/internal/v1/receipt-ocr` | 영수증 OCR → 날짜·식재료 추출 |
 | POST | `/internal/v1/fridge-detection` | 냉장고 사진 식재료 감지 |
 
 모든 엔드포인트는 `multipart/form-data`로 이미지 파일을 받습니다.
