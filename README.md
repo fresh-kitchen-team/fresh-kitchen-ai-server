@@ -107,6 +107,9 @@ GEMINI_API_KEY=your-gemini-api-key
 
 # API 인증 토큰 (Bearer 방식, 백엔드 팀에 전달)
 AI_SECRET_TOKEN=your-secret-token
+
+# Gemini API 타임아웃 (초, 기본값 30 — 생략 가능)
+GEMINI_TIMEOUT=30
 ```
 
 `AI_SECRET_TOKEN` 생성 방법:
@@ -133,7 +136,7 @@ python3 -m uvicorn main:app --reload --port 8000
 ngrok http 8000
 ```
 
-서버가 시작되면 `models/food_classifier/predict_V2_M.py`의 `load_food_model()`, `models/receipt_ocr/receipt_ocr.py`, `models/object_detection/fridge_detection.py` 모듈을 순서대로 `importlib`로 동적 로드합니다. 음식 분류 모델(`best_food_model_v2_m_ver3.pth`)은 이 시점에 메모리에 한 번만 올라갑니다.
+서버가 시작되면 `load_food_model()`을 호출해 음식 분류 모델(`best_food_model_v2_m_ver3.pth`)을 메모리에 로드합니다. Gemini와 Document AI 클라이언트도 이 시점에 초기화되어 이후 요청에서 재사용됩니다.
 
 - API 문서: http://127.0.0.1:8000/docs
 - 로그 파일: `server.log` (UTF-8, 서버와 동일 디렉토리에 생성)
@@ -495,7 +498,13 @@ torch.save({
 
 ### 학습 로그
 
-에폭마다 `docs/training_log.csv`에 `epoch, train_loss, train_acc, val_loss, val_acc, lr`을 기록합니다.
+에폭마다 `docs/training_log.csv`에 아래 컬럼을 기록합니다.
+
+```
+epoch, train_loss, train_acc, val_loss, val_acc, lr, Class1, Class2, ...
+```
+
+`Class1, Class2, ...`는 학습 클래스 목록 전체로, 각 값은 해당 에폭의 val 정확도(%)입니다. 클래스별 학습 곡선을 에폭 단위로 추적할 수 있습니다.
 
 ---
 
@@ -534,7 +543,8 @@ torch.save({
 
 ### ver3 (`docs/training_log_5_13.csv`)
 
-- 학습 환경: macOS, Apple Silicon MPS
+- 학습 환경: Windows, NVIDIA GPU (CUDA)
+- 데이터셋: Train 11,050장 / Val 2,731장
 - 22 Epoch에서 Early Stopping (patience=5)
 - **최고 val_acc: 94.73%** (Epoch 17)
 - LR은 ReduceLROnPlateau에 의해 1e-4 → 5e-5 → 2.5e-5로 자동 감소
@@ -593,6 +603,6 @@ python training/train_EfficientNet_V2_M.py
 
 ### 파일 업로드 검증
 
-- Content-Type 헤더 기준으로 `image/jpeg`, `image/png`, `image/webp`만 허용합니다.
+- Content-Type 헤더와 실제 파일 바이트(magic bytes) 두 단계로 형식을 검증합니다. `image/jpeg`, `image/png`, `image/webp`만 허용합니다.
 - 파일 크기는 10MB로 제한됩니다.
 - 업로드된 파일은 처리 완료 후 `os.unlink`로 즉시 삭제됩니다.
