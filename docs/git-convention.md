@@ -15,37 +15,17 @@ The goals are:
 
 ## 2. Branch Strategy
 
-feat/* → main
+develop → main
 
 ### Branch Roles
 
-- `feat/*`
-  - feature or task-level branch
-  - created per unit of work
+- `develop`
+  - default working branch
+  - all development work is done here
 
 - `main`
-  - production-ready branch
-  - deployment only
-
----
-
-## 3. Branch Naming Convention
-
-feat/domain-feature
-
-### Rules
-
-- lowercase only
-- words separated by `-`
-- short but meaningful
-- reflect main purpose
-
-### Examples
-
-feat/food-classifier
-feat/receipt-ocr
-feat/fridge-detection
-feat/gemini-fallback
+  - release-ready branch
+  - merged from develop only when ready to release
 
 ---
 
