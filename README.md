@@ -543,6 +543,7 @@ torch.save({
 ### ver3 (`docs/training_log_5_13.csv`)
 
 - 학습 환경: Windows, NVIDIA GPU (CUDA)
+- 클래스 수: 60개
 - 데이터셋: Train 11,050장 / Val 2,731장
 - 22 Epoch에서 Early Stopping (patience=5)
 - **최고 val_acc: 94.73%** (Epoch 17)
