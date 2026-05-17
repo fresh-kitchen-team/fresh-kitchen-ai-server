@@ -12,11 +12,11 @@ import concurrent.futures
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from models.category import normalize_category
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_BASE_DIR, '.env'))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
 CONFIDENCE_THRESHOLD = 75.0
 SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
 GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
@@ -86,11 +86,12 @@ CLASS_CATEGORY = {
     "Zucchini": "VEGETABLE",
 }
 
-VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK"}
-
-def _normalize_category(value: str) -> str:
-    v = (value or "").strip().upper()
-    return v if v in VALID_CATEGORIES else "ETC"
+_TRANSFORM = transforms.Compose([
+    transforms.Resize(512),
+    transforms.CenterCrop(480),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
 
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
@@ -184,7 +185,7 @@ VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC
         result = json.loads(response.text)
         return {
             "label": result.get("label", "unknown"),
-            "category": result.get("category", "기타"),
+            "category": result.get("category", "ETC"),
         }
 
     except json.JSONDecodeError:
@@ -223,15 +224,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
     try:
         image = Image.open(image_path).convert('RGB')
-
-        transform = transforms.Compose([
-            transforms.Resize(512),
-            transforms.CenterCrop(480),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-
-        input_tensor = transform(image).unsqueeze(0).to(device)
+        input_tensor = _TRANSFORM(image).unsqueeze(0).to(device)
 
     except FileNotFoundError:
         return {"error": f"'{image_path}' 사진을 찾을 수 없습니다."}
@@ -258,7 +251,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
             logger.warning(f"Gemini 실패: {gemini_result['error']} → EfficientNet 결과 사용")
             return {
                 "best_match": best_class,
-                "category": _normalize_category(CLASS_CATEGORY.get(best_class, "ETC")),
+                "category": normalize_category(CLASS_CATEGORY.get(best_class, "ETC")),
                 "confidence": confidence,
                 "top3": top3_list,
                 "source": "efficientnet_fallback"
@@ -269,7 +262,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
         return {
             "best_match": gemini_label,
-            "category": _normalize_category(gemini_result.get("category", "ETC")),
+            "category": normalize_category(gemini_result.get("category", "ETC")),
             "confidence": confidence,
             "top3": [],
             "source": "gemini",
@@ -278,7 +271,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
     return {
         "best_match": best_class,
-        "category": _normalize_category(CLASS_CATEGORY.get(best_class, "ETC")),
+        "category": normalize_category(CLASS_CATEGORY.get(best_class, "ETC")),
         "confidence": confidence,
         "top3": top3_list,
         "source": "efficientnet"
@@ -288,10 +281,10 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 # [Main 블록] 단독 실행 테스트용
 # ==========================================
 if __name__ == '__main__':
-    TEST_MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
+    _MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
     TEST_IMAGE_PATH = os.path.join(_BASE_DIR, 'picture_model', 'predict', 'beef1.jpeg')
 
-    my_model, my_device, class_names = load_food_model(TEST_MODEL_PATH)
+    my_model, my_device, class_names = load_food_model(_MODEL_PATH)
 
     if my_model:
         print(f"\n🔍 '{TEST_IMAGE_PATH}' 분석 중...")

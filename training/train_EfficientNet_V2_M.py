@@ -139,7 +139,8 @@ def main():
     # 클래스 불균형 확인
     print("\n📊 클래스별 Train 이미지 수:")
     for cls in class_names:
-        count = len(os.listdir(os.path.join(DATA_DIR, 'train', cls)))
+        count = len([f for f in os.listdir(os.path.join(DATA_DIR, 'train', cls))
+                     if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))])
         print(f"   {cls:<15}: {count}장")
 
     # --------------------------------------

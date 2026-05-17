@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from models.category import normalize_category
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
@@ -14,12 +15,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
-
-VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK"}
-
-def _normalize_category(value: str) -> str:
-    v = (value or "").strip().upper()
-    return v if v in VALID_CATEGORIES else "ETC"
 
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
@@ -87,7 +82,7 @@ def detect_fridge_items(image_path: str) -> list:
         for item in items:
             if isinstance(item, dict):
                 name = item.get("name", "").strip()
-                category = _normalize_category(item.get("category", "ETC"))
+                category = normalize_category(item.get("category", "ETC"))
             else:
                 name = str(item).strip()
                 category = "ETC"

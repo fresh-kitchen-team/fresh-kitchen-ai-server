@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from google.cloud import documentai
 from google import genai
 from google.genai import types
+from models.category import normalize_category
 
 # ==========================================
 # [1. 설정 구역]
@@ -31,12 +32,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
-
-VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK"}
-
-def _normalize_category(value: str) -> str:
-    v = (value or "").strip().upper()
-    return v if v in VALID_CATEGORIES else "ETC"
 
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _docai_client = None
@@ -170,12 +165,13 @@ def filter_with_gemini(raw_data: dict) -> dict:
         ingredients = []
         for item in raw_ingredients:
             if isinstance(item, dict):
-                ingredients.append({
-                    "name": item.get("name", ""),
-                    "category": _normalize_category(item.get("category", "ETC")),
-                })
+                name = item.get("name", "").strip()
             else:
-                ingredients.append({"name": str(item), "category": "ETC"})
+                name = str(item).strip()
+            if not name:
+                continue
+            category = normalize_category(item.get("category", "ETC") if isinstance(item, dict) else "ETC")
+            ingredients.append({"name": name, "category": category})
 
         return {
             "purchasedAt": purchased_at,
