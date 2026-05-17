@@ -50,6 +50,7 @@ fresh-kitchen-ai-server/
 ├── best_food_model_v2_m_ver3.pth         # 학습된 모델 가중치 (git 제외)
 │
 ├── models/
+│   ├── category.py                      # 카테고리 상수 및 정규화 함수 공통 모듈
 │   ├── food_classifier/
 │   │   ├── predict_V2_M.py              # EfficientNet 추론 + Gemini 폴백 + 자동 저장
 │   │   └── test_V2_M.py                 # 클래스별 정확도 평가
@@ -222,6 +223,8 @@ Content-Type 헤더 외에 실제 파일 바이트(magic bytes)로도 형식을 
 | `SAUCE` | 소스 / 양념 |
 | `DRINK` | 음료 |
 | `ETC` | 기타 |
+
+카테고리 상수와 정규화 로직은 `models/category.py`에서 관리합니다. Gemini가 목록에 없는 값을 반환하면 자동으로 `ETC`로 변환됩니다.
 
 ---
 
