@@ -298,8 +298,6 @@ if __name__ == '__main__':
             print(f"🍎 예측 결과: [{result['best_match']}]")
             print(f"📊 확신도: {result['confidence']}%")
             print(f"🔧 판단 주체: {result['source']}")
-            if result.get("gemini_reason"):
-                print(f"💬 Gemini 이유: {result['gemini_reason']}")
             if result.get("auto_saved"):
                 print(f"💾 자동 저장됨: {result['auto_saved']}")
             print("="*35)
