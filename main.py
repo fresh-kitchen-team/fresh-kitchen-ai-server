@@ -95,6 +95,7 @@ async def food_classification(file: UploadFile = File(...), _=Depends(verify_tok
         logger.info(f"[food-classification] 결과: {result['best_match']} ({result['source']})")
         return {
             "bestMatch": result["best_match"],
+            "category": result["category"],
             "confidence": result["confidence"],
             "top3": result["top3"],
             "source": result["source"],

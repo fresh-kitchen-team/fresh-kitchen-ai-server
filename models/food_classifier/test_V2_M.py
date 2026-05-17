@@ -57,6 +57,13 @@ def main():
         class_names = checkpoint['class_names']
         print(f"\n📂 총 {len(class_names)}개 클래스의 테스트 이미지를 찾았습니다.")
         print(f"   - 전체 테스트 이미지 수: {len(test_dataset)}장")
+
+        # 테스트 폴더 클래스 순서가 학습 시와 다르면 정확도가 잘못 측정됨
+        if test_dataset.classes != class_names:
+            print("❌ 오류: 테스트 폴더의 클래스 순서가 모델과 다릅니다.")
+            print(f"   모델: {class_names}")
+            print(f"   테스트: {test_dataset.classes}")
+            return
     except FileNotFoundError:
         print(f"❌ 오류: '{MODEL_PATH}' 파일을 찾을 수 없습니다.")
         print("   💡 먼저 train_EfficientNet_V2-M.py를 실행해서 모델을 학습해주세요.")

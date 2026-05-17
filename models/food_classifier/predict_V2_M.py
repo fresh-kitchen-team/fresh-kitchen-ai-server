@@ -23,6 +23,69 @@ GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
 
+CLASS_CATEGORY = {
+    "Anchovy": "SEAFOOD",
+    "Bacon": "MEAT",
+    "Beansprout": "VEGETABLE",
+    "Beef": "MEAT",
+    "BellPepper": "VEGETABLE",
+    "Blueberry": "FRUIT",
+    "Broccoli": "VEGETABLE",
+    "Butter": "DAIRY",
+    "Cabbage": "VEGETABLE",
+    "Carrot": "VEGETABLE",
+    "Cheese": "DAIRY",
+    "Chicken": "MEAT",
+    "ChiliPepper": "VEGETABLE",
+    "ChiliPowder": "SAUCE",
+    "Chives": "VEGETABLE",
+    "CookingOil": "ETC",
+    "Corn": "GRAIN",
+    "Cucumber": "VEGETABLE",
+    "Doenjang": "SAUCE",
+    "Egg": "ETC",
+    "Eggplant": "VEGETABLE",
+    "Garlic": "VEGETABLE",
+    "GlassNoodles": "GRAIN",
+    "Gochujang": "SAUCE",
+    "GreenOnion": "VEGETABLE",
+    "Kelp": "SEAFOOD",
+    "Ketchup": "SAUCE",
+    "Kimchi": "VEGETABLE",
+    "Lettuce": "VEGETABLE",
+    "Mackerel": "SEAFOOD",
+    "Mayonnaise": "SAUCE",
+    "Milk": "DAIRY",
+    "Mushroom": "VEGETABLE",
+    "Mustard": "SAUCE",
+    "Onion": "VEGETABLE",
+    "OysterSauce": "SAUCE",
+    "Pear": "FRUIT",
+    "Pepper": "ETC",
+    "PerillaLeaf": "VEGETABLE",
+    "Pork": "MEAT",
+    "Potato": "VEGETABLE",
+    "Radish": "VEGETABLE",
+    "RamenNoodles": "GRAIN",
+    "RiceCake": "GRAIN",
+    "Salt": "ETC",
+    "Sausage": "MEAT",
+    "Seaweed": "SEAFOOD",
+    "Sesame": "GRAIN",
+    "SesameOil": "SAUCE",
+    "Shrimp": "SEAFOOD",
+    "SoySauce": "SAUCE",
+    "Spinach": "VEGETABLE",
+    "Squid": "SEAFOOD",
+    "Ssamjang": "SAUCE",
+    "Sugar": "ETC",
+    "SweetPotato": "VEGETABLE",
+    "Tofu": "ETC",
+    "Tuna": "SEAFOOD",
+    "Vinegar": "SAUCE",
+    "Zucchini": "VEGETABLE",
+}
+
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -83,8 +146,11 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
 [클래스 목록]
 {class_list_str}
 
+[카테고리 목록] 반드시 아래 중 하나로 분류해:
+VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC
+
 [출력 형식] 다른 설명 없이 아래 JSON만 출력:
-{{"label": "클래스명", "reason": "한 줄 이유"}}
+{{"label": "클래스명", "category": "카테고리"}}
 
 목록에 없는 것처럼 보여도 가장 유사한 클래스로 분류해줘.
 """
@@ -112,7 +178,7 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
         result = json.loads(response.text)
         return {
             "label": result.get("label", "unknown"),
-            "reason": result.get("reason", "")
+            "category": result.get("category", "기타"),
         }
 
     except json.JSONDecodeError:
@@ -186,6 +252,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
             logger.warning(f"Gemini 실패: {gemini_result['error']} → EfficientNet 결과 사용")
             return {
                 "best_match": best_class,
+                "category": CLASS_CATEGORY.get(best_class, "기타"),
                 "confidence": confidence,
                 "top3": top3_list,
                 "source": "efficientnet_fallback"
@@ -196,15 +263,16 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
         return {
             "best_match": gemini_label,
+            "category": gemini_result.get("category", "기타"),
             "confidence": confidence,
             "top3": [],
             "source": "gemini",
-            "gemini_reason": gemini_result.get("reason", ""),
             "auto_saved": saved_path
         }
 
     return {
         "best_match": best_class,
+        "category": CLASS_CATEGORY.get(best_class, "기타"),
         "confidence": confidence,
         "top3": top3_list,
         "source": "efficientnet"
@@ -230,8 +298,6 @@ if __name__ == '__main__':
             print(f"🍎 예측 결과: [{result['best_match']}]")
             print(f"📊 확신도: {result['confidence']}%")
             print(f"🔧 판단 주체: {result['source']}")
-            if result.get("gemini_reason"):
-                print(f"💬 Gemini 이유: {result['gemini_reason']}")
             if result.get("auto_saved"):
                 print(f"💾 자동 저장됨: {result['auto_saved']}")
             print("="*35)
