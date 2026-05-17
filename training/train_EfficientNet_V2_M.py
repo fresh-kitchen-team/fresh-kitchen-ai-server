@@ -18,6 +18,9 @@ BATCH_SIZE = 8  # MPS 안정성 최우선
 LEARNING_RATE = 1e-4
 EPOCHS = 30
 PATIENCE = 5
+LABEL_SMOOTHING = 0.1
+GRAD_CLIP_NORM = 1.0
+UNFREEZE_EPOCH = 5  # 이 에폭 이후 전체 레이어 해동
 SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
 LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log.csv')
 NUM_WORKERS = 0 # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
@@ -148,11 +151,11 @@ def main():
     # --------------------------------------
     # 7. 손실 함수 / Optimizer / Scheduler
     # --------------------------------------
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING)
     optimizer = optim.AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=LEARNING_RATE,
-        weight_decay=5e-3
+        weight_decay=1e-3
     )
     # ReduceLROnPlateau: val_loss가 개선 없으면 lr 감소 (조기 종료와 완벽 호환)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -180,6 +183,18 @@ def main():
         print(f'Epoch {epoch+1}/{EPOCHS}')
         epoch_log = {'epoch': epoch + 1}
 
+        # Progressive Unfreezing: UNFREEZE_EPOCH 이후 전체 레이어 해동
+        if epoch == UNFREEZE_EPOCH:
+            for param in model.parameters():
+                param.requires_grad = True
+            optimizer.add_param_group({
+                'params': [p for n, p in model.named_parameters()
+                           if 'classifier' not in n and p.requires_grad],
+                'lr': LEARNING_RATE * 0.1,
+                'weight_decay': 1e-3
+            })
+            print(f"🔓 전체 레이어 해동 완료! (backbone LR: {LEARNING_RATE * 0.1})")
+
         for phase in ['train', 'val']:
             model.train() if phase == 'train' else model.eval()
 
@@ -201,6 +216,7 @@ def main():
 
                     if phase == 'train':
                         loss.backward()
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=GRAD_CLIP_NORM)
                         optimizer.step()
 
                 running_loss += loss.item() * inputs.size(0)
