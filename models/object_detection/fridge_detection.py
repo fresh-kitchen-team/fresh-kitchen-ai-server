@@ -44,10 +44,11 @@ def detect_fridge_items(image_path: str) -> list:
 - 반드시 한글로 출력해줘
 - 확실하지 않은 것은 제외해줘
 - 같은 식재료는 중복 없이 하나만 써줘 (예: "계란"과 "달걀"은 "계란" 하나로)
+- 각 식재료마다 카테고리 분류: VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC 중 하나
 
 [출력 형식]
 반드시 아래 JSON 배열 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
-["재료1", "재료2", "재료3"]
+[{"name": "재료1", "category": "VEGETABLE"}, {"name": "재료2", "category": "MEAT"}]
 """
 
         def _call():
@@ -74,14 +75,19 @@ def detect_fridge_items(image_path: str) -> list:
         if not isinstance(items, list):
             return []
 
-        # 중복 제거 (공백 기준)
+        # 중복 제거 + 형식 보정
         seen = set()
         result = []
         for item in items:
-            key = item.strip()
-            if key and key not in seen:
-                seen.add(key)
-                result.append(key)
+            if isinstance(item, dict):
+                name = item.get("name", "").strip()
+                category = item.get("category", "ETC")
+            else:
+                name = str(item).strip()
+                category = "ETC"
+            if name and name not in seen:
+                seen.add(name)
+                result.append({"name": name, "category": category})
         return result
 
     except json.JSONDecodeError:
@@ -98,4 +104,4 @@ if __name__ == "__main__":
     result = detect_fridge_items(test_image)
     print(f"\n🥦 감지된 식재료 목록:")
     for item in result:
-        print(f"  - {item}")
+        print(f"  - {item['name']} ({item['category']})")
