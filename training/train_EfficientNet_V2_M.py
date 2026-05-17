@@ -1,3 +1,5 @@
+import random
+import collections
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -24,13 +26,14 @@ UNFREEZE_EPOCH = 5  # 이 에폭 이후 전체 레이어 해동
 SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
 LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log.csv')
 NUM_WORKERS = 0 # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
+SEED = 42
 
 def remove_corrupted_images(directory):
     print("🔍 손상된 이미지 검사를 시작합니다...")
     removed_count = 0
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.lower().endswith(('png', 'jpg', 'jpeg')):
+            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
                 file_path = os.path.join(root, file)
                 try:
                     with Image.open(file_path) as img:
@@ -41,7 +44,16 @@ def remove_corrupted_images(directory):
                     removed_count += 1
     print(f"✅ 검사 완료! 총 {removed_count}개의 손상된 이미지가 제거되었습니다.\n")
 
+def set_seed(seed: int):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 def main():
+    set_seed(SEED)
+
     # --------------------------------------
     # 2. 하드웨어 가속 설정
     # --------------------------------------
@@ -97,14 +109,15 @@ def main():
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
     class_names = image_datasets['train'].classes
 
-    # NUM_WORKERS=0이므로 pin_memory 비활성화 (메모리 절약)
-    pin_memory = False
+    # CUDA일 때만 pin_memory 활성화 (MPS/CPU는 비활성화)
+    pin_memory = device.type == "cuda"
 
     # 클래스 불균형 해결: WeightedRandomSampler
     # 적은 클래스가 더 자주 뽑히도록 가중치 부여
     train_targets = image_datasets['train'].targets
-    class_sample_counts = [train_targets.count(i) for i in range(len(class_names))]
-    class_weights = [1.0 / count if count > 0 else 0.0 for count in class_sample_counts]
+    count_per_class = collections.Counter(train_targets)
+    class_weights = [1.0 / count_per_class[i] if count_per_class[i] > 0 else 0.0
+                     for i in range(len(class_names))]
     sample_weights = [class_weights[t] for t in train_targets]
 
     train_sampler = WeightedRandomSampler(
@@ -115,9 +128,9 @@ def main():
 
     dataloaders = {
         'train': DataLoader(image_datasets['train'], batch_size=BATCH_SIZE, sampler=train_sampler,
-                            num_workers=NUM_WORKERS),
+                            num_workers=NUM_WORKERS, pin_memory=pin_memory),
         'val':   DataLoader(image_datasets['val'],   batch_size=BATCH_SIZE, shuffle=False,
-                            num_workers=NUM_WORKERS)
+                            num_workers=NUM_WORKERS, pin_memory=pin_memory)
     }
 
     print(f"✅ 학습 클래스 ({len(class_names)}개): {class_names}")
@@ -148,6 +161,9 @@ def main():
     )
     model = model.to(device)
 
+    # Unfreeze 시 중복 추가 방지용: 이미 optimizer에 들어갈 파라미터 id 집합
+    initial_param_ids = set(id(p) for p in model.parameters() if p.requires_grad)
+
     # --------------------------------------
     # 7. 손실 함수 / Optimizer / Scheduler
     # --------------------------------------
@@ -174,7 +190,7 @@ def main():
     # CSV 로그 초기화
     with open(LOG_PATH, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'lr'])
+        writer.writerow(['epoch', 'train_loss', 'train_acc', 'val_loss', 'val_acc', 'lr_head', 'lr_backbone'])
 
     print(f"\n🔥 학습 시작!")
     print("-" * 30)
@@ -187,9 +203,11 @@ def main():
         if epoch == UNFREEZE_EPOCH:
             for param in model.parameters():
                 param.requires_grad = True
+            # 이미 optimizer에 등록된 파라미터(features[-4:] + classifier)를 제외하고 추가
+            new_params = [p for p in model.parameters()
+                          if p.requires_grad and id(p) not in initial_param_ids]
             optimizer.add_param_group({
-                'params': [p for n, p in model.named_parameters()
-                           if 'classifier' not in n and p.requires_grad],
+                'params': new_params,
                 'lr': LEARNING_RATE * 0.1,
                 'weight_decay': 1e-3
             })
@@ -234,8 +252,8 @@ def main():
             epoch_log[f'{phase}_acc'] = round(epoch_acc.item(), 4)
 
             if phase == 'val':
-                current_lr = optimizer.param_groups[0]['lr']
-                epoch_log['lr'] = current_lr
+                epoch_log['lr_head'] = optimizer.param_groups[0]['lr']
+                epoch_log['lr_backbone'] = optimizer.param_groups[1]['lr'] if len(optimizer.param_groups) > 1 else ''
 
                 # Scheduler는 val_loss 기준으로 lr 조정
                 scheduler.step(epoch_loss)
@@ -258,7 +276,7 @@ def main():
                 epoch_log['epoch'],
                 epoch_log['train_loss'], epoch_log['train_acc'],
                 epoch_log['val_loss'],   epoch_log['val_acc'],
-                epoch_log['lr']
+                epoch_log['lr_head'],    epoch_log['lr_backbone']
             ])
 
         if patience_check >= PATIENCE:
