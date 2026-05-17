@@ -23,6 +23,69 @@ GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
 
+CLASS_CATEGORY = {
+    "Anchovy": "기타",
+    "Bacon": "육류",
+    "Beansprout": "채소",
+    "Beef": "육류",
+    "BellPepper": "채소",
+    "Blueberry": "채소",
+    "Broccoli": "채소",
+    "Butter": "유제품",
+    "Cabbage": "채소",
+    "Carrot": "채소",
+    "Cheese": "유제품",
+    "Chicken": "육류",
+    "ChiliPepper": "채소",
+    "ChiliPowder": "기타",
+    "Chives": "채소",
+    "CookingOil": "기타",
+    "Corn": "채소",
+    "Cucumber": "채소",
+    "Doenjang": "기타",
+    "Egg": "기타",
+    "Eggplant": "채소",
+    "Garlic": "채소",
+    "GlassNoodles": "기타",
+    "Gochujang": "기타",
+    "GreenOnion": "채소",
+    "Kelp": "기타",
+    "Ketchup": "기타",
+    "Kimchi": "채소",
+    "Lettuce": "채소",
+    "Mackerel": "기타",
+    "Mayonnaise": "기타",
+    "Milk": "유제품",
+    "Mushroom": "채소",
+    "Mustard": "기타",
+    "Onion": "채소",
+    "OysterSauce": "기타",
+    "Pear": "채소",
+    "Pepper": "채소",
+    "PerillaLeaf": "채소",
+    "Pork": "육류",
+    "Potato": "채소",
+    "Radish": "채소",
+    "RamenNoodles": "기타",
+    "RiceCake": "기타",
+    "Salt": "기타",
+    "Sausage": "육류",
+    "Seaweed": "기타",
+    "Sesame": "기타",
+    "SesameOil": "기타",
+    "Shrimp": "기타",
+    "SoySauce": "기타",
+    "Spinach": "채소",
+    "Squid": "기타",
+    "Ssamjang": "기타",
+    "Sugar": "기타",
+    "SweetPotato": "채소",
+    "Tofu": "기타",
+    "Tuna": "기타",
+    "Vinegar": "기타",
+    "Zucchini": "채소",
+}
+
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -83,8 +146,14 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
 [클래스 목록]
 {class_list_str}
 
+[카테고리 목록] 반드시 아래 4가지 중 하나로 분류해:
+- 채소
+- 육류
+- 유제품
+- 기타
+
 [출력 형식] 다른 설명 없이 아래 JSON만 출력:
-{{"label": "클래스명", "reason": "한 줄 이유"}}
+{{"label": "클래스명", "category": "카테고리"}}
 
 목록에 없는 것처럼 보여도 가장 유사한 클래스로 분류해줘.
 """
@@ -112,7 +181,7 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
         result = json.loads(response.text)
         return {
             "label": result.get("label", "unknown"),
-            "reason": result.get("reason", "")
+            "category": result.get("category", "기타"),
         }
 
     except json.JSONDecodeError:
@@ -186,6 +255,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
             logger.warning(f"Gemini 실패: {gemini_result['error']} → EfficientNet 결과 사용")
             return {
                 "best_match": best_class,
+                "category": CLASS_CATEGORY.get(best_class, "기타"),
                 "confidence": confidence,
                 "top3": top3_list,
                 "source": "efficientnet_fallback"
@@ -196,15 +266,16 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
         return {
             "best_match": gemini_label,
+            "category": gemini_result.get("category", "기타"),
             "confidence": confidence,
             "top3": [],
             "source": "gemini",
-            "gemini_reason": gemini_result.get("reason", ""),
             "auto_saved": saved_path
         }
 
     return {
         "best_match": best_class,
+        "category": CLASS_CATEGORY.get(best_class, "기타"),
         "confidence": confidence,
         "top3": top3_list,
         "source": "efficientnet"
