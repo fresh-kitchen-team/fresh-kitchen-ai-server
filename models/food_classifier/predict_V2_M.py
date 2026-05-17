@@ -86,6 +86,12 @@ CLASS_CATEGORY = {
     "Zucchini": "VEGETABLE",
 }
 
+VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK", "ETC"}
+
+def _normalize_category(value: str) -> str:
+    v = (value or "").strip().upper()
+    return v if v in VALID_CATEGORIES else "ETC"
+
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -252,7 +258,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
             logger.warning(f"Gemini 실패: {gemini_result['error']} → EfficientNet 결과 사용")
             return {
                 "best_match": best_class,
-                "category": CLASS_CATEGORY.get(best_class, "기타"),
+                "category": _normalize_category(CLASS_CATEGORY.get(best_class, "ETC")),
                 "confidence": confidence,
                 "top3": top3_list,
                 "source": "efficientnet_fallback"
@@ -263,7 +269,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
         return {
             "best_match": gemini_label,
-            "category": gemini_result.get("category", "기타"),
+            "category": _normalize_category(gemini_result.get("category", "ETC")),
             "confidence": confidence,
             "top3": [],
             "source": "gemini",
@@ -272,7 +278,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
     return {
         "best_match": best_class,
-        "category": CLASS_CATEGORY.get(best_class, "기타"),
+        "category": _normalize_category(CLASS_CATEGORY.get(best_class, "ETC")),
         "confidence": confidence,
         "top3": top3_list,
         "source": "efficientnet"

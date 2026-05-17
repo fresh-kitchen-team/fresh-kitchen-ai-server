@@ -32,6 +32,12 @@ GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
 
+VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK", "ETC"}
+
+def _normalize_category(value: str) -> str:
+    v = (value or "").strip().upper()
+    return v if v in VALID_CATEGORIES else "ETC"
+
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _docai_client = None
 try:
@@ -161,10 +167,15 @@ def filter_with_gemini(raw_data: dict) -> dict:
             purchased_at = None
 
         raw_ingredients = parsed.get("ingredients", [])
-        ingredients = [
-            item if isinstance(item, dict) else {"name": item, "category": "ETC"}
-            for item in raw_ingredients
-        ]
+        ingredients = []
+        for item in raw_ingredients:
+            if isinstance(item, dict):
+                ingredients.append({
+                    "name": item.get("name", ""),
+                    "category": _normalize_category(item.get("category", "ETC")),
+                })
+            else:
+                ingredients.append({"name": str(item), "category": "ETC"})
 
         return {
             "purchasedAt": purchased_at,
