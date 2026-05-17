@@ -86,7 +86,7 @@ CLASS_CATEGORY = {
     "Zucchini": "VEGETABLE",
 }
 
-VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK", "ETC"}
+VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK"}
 
 def _normalize_category(value: str) -> str:
     v = (value or "").strip().upper()

@@ -32,7 +32,7 @@ GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
 
-VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK", "ETC"}
+VALID_CATEGORIES = {"VEGETABLE", "FRUIT", "MEAT", "SEAFOOD", "DAIRY", "GRAIN", "SAUCE", "DRINK"}
 
 def _normalize_category(value: str) -> str:
     v = (value or "").strip().upper()
