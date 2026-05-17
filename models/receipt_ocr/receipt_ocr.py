@@ -126,10 +126,11 @@ def filter_with_gemini(raw_data: dict) -> dict:
    - 브랜드명 제거 (예: "CJ 비비고 만두" → "만두", "풀무원 두부" → "두부")
    - 카드명, 포인트, 환불, 할인, 합계, 부가세, 봉투 등 비식재료 제외
    - 중복 제거, 반드시 한글로 출력
+   - 각 식재료마다 카테고리 분류: VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC 중 하나
 
 [출력 형식]
 반드시 아래 JSON 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
-{{"purchasedAt": "2026-05-13", "ingredients": ["재료1", "재료2"]}} 또는 날짜 없을 때: {{"purchasedAt": null, "ingredients": ["재료1", "재료2"]}}
+{{"purchasedAt": "2026-05-13", "ingredients": [{{"name": "재료1", "category": "VEGETABLE"}}, {{"name": "재료2", "category": "MEAT"}}]}} 또는 날짜 없을 때: {{"purchasedAt": null, "ingredients": [{{"name": "재료1", "category": "VEGETABLE"}}]}}
 """
 
     def _call():
@@ -159,9 +160,15 @@ def filter_with_gemini(raw_data: dict) -> dict:
         if not purchased_at or not re.match(r'^\d{4}-\d{2}-\d{2}$', str(purchased_at)):
             purchased_at = None
 
+        raw_ingredients = parsed.get("ingredients", [])
+        ingredients = [
+            item if isinstance(item, dict) else {"name": item, "category": "ETC"}
+            for item in raw_ingredients
+        ]
+
         return {
             "purchasedAt": purchased_at,
-            "ingredients": parsed.get("ingredients", []),
+            "ingredients": ingredients,
         }
 
     except json.JSONDecodeError:
