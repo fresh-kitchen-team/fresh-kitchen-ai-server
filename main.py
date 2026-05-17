@@ -1,4 +1,5 @@
 import os
+import hmac
 import logging
 import tempfile
 from contextlib import asynccontextmanager
@@ -27,11 +28,13 @@ ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 AI_SECRET_TOKEN = os.getenv("AI_SECRET_TOKEN")
+if not AI_SECRET_TOKEN:
+    raise RuntimeError("AI_SECRET_TOKEN이 .env에 설정되지 않았습니다. 서버를 시작할 수 없습니다.")
 
 security = HTTPBearer()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    if credentials.credentials != AI_SECRET_TOKEN:
+    if not hmac.compare_digest(credentials.credentials, AI_SECRET_TOKEN):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -73,7 +76,7 @@ def _validate_image(file: UploadFile, data: bytes):
 
 
 def _tmp_file(upload: UploadFile, data: bytes) -> str:
-    suffix = os.path.splitext(upload.filename)[1] or ".jpg"
+    suffix = os.path.splitext(upload.filename or "")[1] or ".jpg"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
         f.write(data)
         return f.name
@@ -101,8 +104,8 @@ async def food_classification(file: UploadFile = File(...), _=Depends(verify_tok
             "source": result["source"],
         }
     except Exception as e:
-        logger.error(f"[food-classification] 오류: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.error(f"[food-classification] 오류: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "서버 내부 오류가 발생했습니다."})
     finally:
         os.unlink(tmp_path)
 
@@ -125,8 +128,8 @@ async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
             "ingredients": result["ingredients"],
         }
     except Exception as e:
-        logger.error(f"[receipt-ocr] 오류: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.error(f"[receipt-ocr] 오류: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "서버 내부 오류가 발생했습니다."})
     finally:
         os.unlink(tmp_path)
 
@@ -145,7 +148,7 @@ async def fridge_detection(file: UploadFile = File(...), _=Depends(verify_token)
         logger.info(f"[fridge-detection] 결과: {len(items)}개 식재료 감지")
         return {"items": items}
     except Exception as e:
-        logger.error(f"[fridge-detection] 오류: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.error(f"[fridge-detection] 오류: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "서버 내부 오류가 발생했습니다."})
     finally:
         os.unlink(tmp_path)
