@@ -264,8 +264,7 @@ Authorization: Bearer <token>
   "category": "ETC",
   "confidence": 54.31,
   "top3": [],
-  "source": "gemini",
-  "auto_saved": "/abs/path/to/dataset/auto_labeled/Tofu/auto_20260514_153022_123456.jpg"
+  "source": "gemini"
 }
 ```
 
