@@ -1,4 +1,3 @@
-import random
 import collections
 import torch
 import torch.nn as nn
@@ -26,7 +25,6 @@ UNFREEZE_EPOCH = 5  # 이 에폭 이후 전체 레이어 해동
 SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
 LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log.csv')
 NUM_WORKERS = 0 # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
-SEED = 42
 
 def remove_corrupted_images(directory):
     print("🔍 손상된 이미지 검사를 시작합니다...")
@@ -44,16 +42,7 @@ def remove_corrupted_images(directory):
                     removed_count += 1
     print(f"✅ 검사 완료! 총 {removed_count}개의 손상된 이미지가 제거되었습니다.\n")
 
-def set_seed(seed: int):
-    random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
 def main():
-    set_seed(SEED)
-
     # --------------------------------------
     # 2. 하드웨어 가속 설정
     # --------------------------------------
