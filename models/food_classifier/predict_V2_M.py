@@ -180,7 +180,8 @@ VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC
 [출력 형식] 다른 설명 없이 아래 JSON만 출력:
 {{"label": "클래스명", "category": "카테고리"}}
 
-목록에 없는 것처럼 보여도 가장 유사한 클래스로 분류해줘.
+목록에 있는 식재료면 반드시 목록의 클래스명 그대로 반환해줘.
+목록에 없는 식재료면 영어 식품명(예: Watermelon, Garlic)으로 반환해줘.
 """
 
         def _call():
