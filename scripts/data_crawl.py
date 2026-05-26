@@ -17,77 +17,139 @@ OUTPUT_ROOT = os.path.join(_BASE_DIR, 'dataset', 'crawldata')
 # 키: 클래스 폴더명 / 값: 검색어 목록
 CLASS_QUERIES = {
 
-    'Ketchup': [
+    '맥주': [
+        # 캔맥주
+        '캔맥주 냉장고',
+        '캔맥주 마트 진열',
+        'canned beer refrigerator',
+        '하이트 카스 테라 캔 맥주',
+        # 병맥주
+        '병맥주 냉장고',
+        '병맥주 마트 진열',
+        'beer bottle refrigerator',
+        '하이트 카스 테라 병 맥주',
+        # 피쳐
+        '맥주 피쳐',
+        '생맥주 피쳐 테이블',
+        'beer pitcher',
+        'draft beer pitcher',
+    ],
+
+    # ── 150장 미만 보강 클래스 ──────────────────────────────────────
+
+    '무': [
+        '무 마트 냉장고',
+        '흰 무 채소 신선',
+        '무 통째로 식재료',
+        'daikon radish fresh',
+    ],
+
+    '라면': [
+        '라면 봉지 마트',
+        '라면 건면 식재료',
+        '인스턴트 라면 냉장고',
+        'ramen noodles package',
+    ],
+
+    '쌈장': [
+        '쌈장 통 마트',
+        '쌈장 용기 냉장고',
+        '재래식 쌈장 식재료',
+        'ssamjang korean paste',
+    ],
+
+    '식용유': [
+        '식용유 병 마트',
+        '식용유 냉장고 보관',
+        '콩기름 포도씨유 식재료',
+        'cooking oil bottle kitchen',
+    ],
+
+    '배': [
+        '배 과일 마트',
+        '한국 배 신선 냉장고',
+        '배 과일 낱개',
+        'korean pear fresh fruit',
+    ],
+
+    '옥수수': [
+        '옥수수 냉장고',
+        '옥수수 낱개 신선',
+        '찐 옥수수 식재료',
+        'corn cob fresh vegetable',
+    ],
+
+    '케첩': [
         '케첩 병 마트',
         '케첩 냉장고 보관',
         '토마토 케첩 용기',
         'ketchup bottle kitchen',
     ],
 
-    'Mackerel': [
+    '고등어': [
         '고등어 마트 생선',
         '고등어 냉장 신선',
         '고등어 한 마리 식재료',
         'mackerel fish fresh',
     ],
 
-    'Mayonnaise': [
+    '마요네즈': [
         '마요네즈 병 냉장고',
         '마요네즈 튜브 마트',
         '마요네즈 용기 식재료',
         'mayonnaise jar kitchen',
     ],
 
-    'Tomato': [
+    '토마토': [
         '토마토 냉장고 신선',
         '토마토 낱개 마트',
         '방울토마토 식재료',
         'tomato fresh vegetable',
     ],
 
-    'PerillaLeaf': [
+    '깻잎': [
         '깻잎 냉장고',
         '깻잎 묶음 마트',
         '신선 깻잎 채소',
         'perilla leaf korean vegetable',
     ],
 
-    'Bacon': [
+    '베이컨': [
         '베이컨 냉장고 포장',
         '베이컨 슬라이스 마트',
         '베이컨 팩 식재료',
         'bacon package refrigerator',
     ],
 
-    'Coke': [
+    '콜라': [
         '콜라 캔 냉장고',
         '콜라 병 마트',
         '코카콜라 펩시 냉장고',
         'cola can refrigerator',
     ],
 
-    'Butter': [
+    '버터': [
         '버터 냉장고 보관',
         '버터 포장 마트',
         '무염 버터 식재료',
         'butter block refrigerator',
     ],
 
-    'Sugar': [
+    '설탕': [
         '설탕 봉지 마트',
         '설탕 통 식재료',
         '흰 설탕 용기',
         'sugar bag kitchen',
     ],
 
-    'Chives': [
+    '부추': [
         '부추 냉장고',
         '부추 묶음 마트',
         '신선 부추 채소',
         'chives korean vegetable fresh',
     ],
 
-    'GlassNoodles': [
+    '당면': [
         '당면 봉지 마트',
         '당면 식재료 건면',
         '국수 당면 포장',
