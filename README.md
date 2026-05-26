@@ -74,7 +74,7 @@ fresh-kitchen-ai-server/
 │   ├── training_log_5_13.csv           # ver3 에폭별 학습 로그
 │   └── git-convention.md               # 브랜치·커밋 컨벤션
 │
-├── receipt_model/                      # Google Cloud 서비스 계정 키 (git 제외)
+├── receipt_model/                      # Google Cloud 서비스 계정 키 포함 (키 파일은 git 제외)
 │
 └── dataset/                            # 학습 데이터 (git 제외)
     ├── train/                          # 클래스별 서브폴더
@@ -243,13 +243,13 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "bestMatch": "Kimchi",
+  "bestMatch": "김치",
   "category": "VEGETABLE",
   "confidence": 98.42,
   "top3": [
-    { "name": "Kimchi",    "confidence": 98.42 },
-    { "name": "Gochujang", "confidence":  1.13 },
-    { "name": "Doenjang",  "confidence":  0.31 }
+    { "name": "김치",   "confidence": 98.42 },
+    { "name": "고추장", "confidence":  1.13 },
+    { "name": "된장",   "confidence":  0.31 }
   ],
   "source": "efficientnet"
 }
@@ -259,7 +259,7 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "bestMatch": "Tofu",
+  "bestMatch": "두부",
   "category": "ETC",
   "confidence": 54.31,
   "top3": [],
@@ -271,13 +271,13 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "bestMatch": "Beef",
+  "bestMatch": "소고기",
   "category": "MEAT",
   "confidence": 42.10,
   "top3": [
-    { "name": "Beef",    "confidence": 42.10 },
-    { "name": "Pork",    "confidence": 31.50 },
-    { "name": "Chicken", "confidence": 18.20 }
+    { "name": "소고기",   "confidence": 42.10 },
+    { "name": "돼지고기", "confidence": 31.50 },
+    { "name": "닭고기",   "confidence": 18.20 }
   ],
   "source": "efficientnet_fallback"
 }
@@ -288,7 +288,7 @@ Authorization: Bearer <token>
 | 값 | 의미 |
 |---|---|
 | `efficientnet` | EfficientNet이 80% 이상 확신도로 분류 |
-| `gemini` | 확신도 < 80%여서 Gemini 2.5 Flash가 분류. `auto_saved` 필드에 자동 저장 경로 포함 |
+| `gemini` | 확신도 < 80%여서 Gemini 2.5 Flash가 분류. 이미지는 서버 내부적으로 `dataset/auto_labeled/`에 자동 저장 |
 | `efficientnet_fallback` | 확신도 < 80%이지만 Gemini 호출도 실패. EfficientNet 결과를 그대로 반환 |
 
 #### 오류 응답
@@ -715,7 +715,7 @@ python models/receipt_ocr/receipt_ocr.py
 | 파일 | 이유 |
 |---|---|
 | `.env` | `GEMINI_API_KEY`, `AI_SECRET_TOKEN`, GCP 프로젝트 정보 포함 |
-| `receipt_model/*.json` | Google Cloud 서비스 계정 개인 키 |
+| `receipt-app-*.json` | Google Cloud 서비스 계정 개인 키 |
 | `*.pth` / `*.pt` | 200 MB 이상 모델 가중치 |
 | `dataset/` | 학습 이미지 전체 |
 
