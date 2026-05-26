@@ -452,7 +452,7 @@ EfficientNet V2-M 추론 (softmax × 100 → top-1 확신도)
 
 - `temperature=0` 고정 → 동일 이미지에 대해 결정적(deterministic) 응답 보장
 - `response_mime_type="application/json"` 강제 → `{"label": "클래스명", "category": "카테고리"}` 반환
-- 클래스 목록에 없는 것처럼 보이는 이미지도 가장 유사한 클래스로 분류하도록 프롬프트 설계
+- 70개 클래스 내 식재료는 클래스명 그대로 반환, 목록에 없는 식재료는 영어 식품명으로 자유 반환 (예: `Watermelon`, `Mango`)
 - `ThreadPoolExecutor(max_workers=1)` + `future.result(timeout=...)` 으로 타임아웃 제어
 
 #### 자동 레이블링 (Auto-labeling)
