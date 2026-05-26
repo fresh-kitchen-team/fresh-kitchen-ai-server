@@ -656,6 +656,8 @@ python models/food_classifier/test_V2_M.py
 | Ketchup | 95.8% | | |
 | Mayonnaise | 96.0% | | |
 | Egg | 96.2% | | |
+| Pepper | 96.2% | | |
+| Tofu | 96.5% | | |
 
 ### ver3 (`docs/training_log_5_13.csv`)
 
