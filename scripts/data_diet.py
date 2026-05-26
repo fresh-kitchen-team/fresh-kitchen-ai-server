@@ -54,11 +54,11 @@ def limit_class_images(target_dir, limit):
             print(f"   ✅ [{class_name}] {total_count}장 (유지 - 목표치 이내)")
 
 def main():
-    # 1. Train 폴더 정리 (500장 제한)
+    # 1. Train 폴더 정리 (400장 제한)
     train_dir = os.path.join(DATA_ROOT, 'train')
     limit_class_images(train_dir, TRAIN_LIMIT)
 
-    # 2. Validation 폴더 정리 (100장 제한)
+    # 2. Validation 폴더 정리 (80장 제한)
     val_dir = os.path.join(DATA_ROOT, 'val')
     limit_class_images(val_dir, VAL_LIMIT)
 
