@@ -16,88 +16,67 @@ OUTPUT_ROOT = os.path.join(_BASE_DIR, 'dataset', 'crawldata')
 # 3. 클래스별 크롤링 쿼리
 # 키: 클래스 폴더명 / 값: 검색어 목록
 CLASS_QUERIES = {
-
-    '맥주': [
-        # 캔맥주
-        '캔맥주 냉장고',
-        '캔맥주 마트 진열',
-        'canned beer refrigerator',
-        '하이트 카스 테라 캔 맥주',
-        # 병맥주
-        '병맥주 냉장고',
-        '병맥주 마트 진열',
-        'beer bottle refrigerator',
-        '하이트 카스 테라 병 맥주',
-        # 피쳐
-        '맥주 피쳐',
-        '생맥주 피쳐 테이블',
-        'beer pitcher',
-        'draft beer pitcher',
-    ],
-
-    # ── 150장 미만 보강 클래스 ──────────────────────────────────────
-
     '무': [
-        '무 마트 냉장고',
-        '흰 무 채소 신선',
-        '무 통째로 식재료',
-        'daikon radish fresh',
+        '무 마트 진열 채소',
+        '흰 무 낱개 신선',
+        '무 냉장 채소 코너',
+        'daikon radish supermarket',
     ],
 
     '라면': [
-        '라면 봉지 마트',
-        '라면 건면 식재료',
-        '인스턴트 라면 냉장고',
-        'ramen noodles package',
+        '라면 봉지 마트 진열',
+        '신라면 진라면 봉지 제품',
+        '인스턴트 라면 상품 사진',
+        'instant ramen noodles package product',
     ],
 
     '쌈장': [
-        '쌈장 통 마트',
-        '쌈장 용기 냉장고',
-        '재래식 쌈장 식재료',
-        'ssamjang korean paste',
+        '쌈장 용기 마트 진열',
+        '쌈장 통 제품 사진',
+        '청정원 재래식 쌈장 상품',
+        'ssamjang korean paste container product',
     ],
 
     '식용유': [
-        '식용유 병 마트',
-        '식용유 냉장고 보관',
-        '콩기름 포도씨유 식재료',
-        'cooking oil bottle kitchen',
+        '식용유 병 마트 진열',
+        '해표 백설 식용유 제품',
+        '식용유 상품 사진',
+        'cooking oil bottle supermarket product',
     ],
 
     '배': [
-        '배 과일 마트',
-        '한국 배 신선 냉장고',
-        '배 과일 낱개',
-        'korean pear fresh fruit',
+        '배 과일 마트 진열',
+        '신고배 한국 배 낱개',
+        '배 과일 냉장 신선',
+        'korean pear fruit supermarket',
     ],
 
     '옥수수': [
-        '옥수수 냉장고',
-        '옥수수 낱개 신선',
-        '찐 옥수수 식재료',
-        'corn cob fresh vegetable',
+        '옥수수 마트 진열 채소',
+        '신선 옥수수 낱개 채소',
+        '옥수수 냉장 채소 코너',
+        'corn cob supermarket fresh vegetable',
     ],
 
     '케첩': [
-        '케첩 병 마트',
-        '케첩 냉장고 보관',
-        '토마토 케첩 용기',
-        'ketchup bottle kitchen',
+        '케첩 병 마트 진열',
+        '하인즈 오뚜기 케첩 제품',
+        '토마토케첩 상품 사진',
+        'ketchup bottle product supermarket',
     ],
 
     '고등어': [
-        '고등어 마트 생선',
-        '고등어 냉장 신선',
-        '고등어 한 마리 식재료',
-        'mackerel fish fresh',
+        '고등어 마트 생선 코너',
+        '고등어 냉장 신선 생선',
+        '고등어 낱개 생선 가게',
+        'mackerel fish supermarket fresh',
     ],
 
     '마요네즈': [
-        '마요네즈 병 냉장고',
-        '마요네즈 튜브 마트',
-        '마요네즈 용기 식재료',
-        'mayonnaise jar kitchen',
+        '마요네즈 병 마트 진열',
+        '오뚜기 마요네즈 제품 사진',
+        '마요네즈 튜브 상품',
+        'mayonnaise jar product supermarket',
     ],
 
     '토마토': [
