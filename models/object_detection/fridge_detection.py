@@ -1,4 +1,5 @@
 import os
+import io
 import json
 import logging
 import mimetypes
@@ -7,7 +8,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from PIL import Image
 from models.category import normalize_category
+
+MAX_IMAGE_PX = 1024
+JPEG_QUALITY = 85
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
@@ -21,6 +26,19 @@ _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else Non
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 
+def _resize_image(image_path: str) -> tuple[bytes, str]:
+    """이미지를 MAX_IMAGE_PX 이하로 리사이즈하고 JPEG bytes로 반환"""
+    with Image.open(image_path) as img:
+        img = img.convert("RGB")
+        w, h = img.size
+        if max(w, h) > MAX_IMAGE_PX:
+            scale = MAX_IMAGE_PX / max(w, h)
+            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=JPEG_QUALITY)
+        return buf.getvalue(), "image/jpeg"
+
+
 def detect_fridge_items(image_path: str) -> list:
     """냉장고 사진에서 Gemini Vision으로 식재료 목록 추출"""
     if not _gemini_client:
@@ -28,24 +46,20 @@ def detect_fridge_items(image_path: str) -> list:
         return []
 
     try:
-        with open(image_path, "rb") as f:
-            image_bytes = f.read()
-
-        mime_type, _ = mimetypes.guess_type(image_path)
-        if mime_type is None:
-            mime_type = "image/jpeg"
+        image_bytes, mime_type = _resize_image(image_path)
 
         prompt = """
 너는 냉장고 속 식재료를 파악하는 전문가야.
-이 냉장고 사진을 보고 보이는 식재료와 식품 재료를 모두 파악해줘.
+이 냉장고 사진을 보고 보이는 식재료와 식품을 모두 파악해줘.
 
 [규칙]
 - 식재료, 식품, 음료만 포함해
 - 브랜드명은 제거하고 핵심 식품명만 써줘 (예: "풀무원 두부" → "두부")
 - 반드시 한글로 출력해줘
-- 확실하지 않은 것은 제외해줘
+- 뚜껑이나 포장재로 내용물이 안 보이는 것은 제외해줘
 - 같은 식재료는 중복 없이 하나만 써줘 (예: "계란"과 "달걀"은 "계란" 하나로)
 - 각 식재료마다 카테고리 분류: VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC 중 하나
+- 식재료가 없으면 빈 배열 []만 반환해줘
 
 [출력 형식]
 반드시 아래 JSON 배열 형식으로만 응답해. 다른 설명은 절대 쓰지 마.
@@ -61,15 +75,21 @@ def detect_fridge_items(image_path: str) -> list:
                 ],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
+                    temperature=0,
                 )
             )
 
-        future = _executor.submit(_call)
-        try:
-            response = future.result(timeout=GEMINI_TIMEOUT)
-        except concurrent.futures.TimeoutError:
-            future.cancel()
-            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
+        response = None
+        for attempt in range(2):
+            future = _executor.submit(_call)
+            try:
+                response = future.result(timeout=GEMINI_TIMEOUT)
+                break
+            except concurrent.futures.TimeoutError:
+                future.cancel()
+                logger.warning(f"Gemini 타임아웃 (시도 {attempt + 1}/2)")
+        if response is None:
+            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 × 2회)")
             return []
 
         items = json.loads(response.text)
