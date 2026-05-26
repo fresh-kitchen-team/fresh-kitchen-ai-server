@@ -30,6 +30,7 @@ CLASS_CATEGORY = {
     "Anchovy": "SEAFOOD",
     "Apple": "FRUIT",
     "Bacon": "MEAT",
+    "Banana": "FRUIT",
     "Beansprout": "VEGETABLE",
     "Beef": "MEAT",
     "Beer": "DRINK",
@@ -52,7 +53,6 @@ CLASS_CATEGORY = {
     "Egg": "ETC",
     "Eggplant": "VEGETABLE",
     "Garlic": "VEGETABLE",
-    "Ginger": "VEGETABLE",
     "GlassNoodles": "GRAIN",
     "Gochujang": "SAUCE",
     "GreenOnion": "VEGETABLE",
@@ -96,7 +96,6 @@ CLASS_CATEGORY = {
     "Tomato": "VEGETABLE",
     "Tuna": "SEAFOOD",
     "Vinegar": "SAUCE",
-    "Yogurt": "DAIRY",
     "Zucchini": "VEGETABLE",
 }
 
