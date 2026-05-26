@@ -181,7 +181,7 @@ VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC
 {{"label": "클래스명", "category": "카테고리"}}
 
 목록에 있는 식재료면 반드시 목록의 클래스명 그대로 반환해줘.
-목록에 없는 식재료면 영어 식품명(예: Watermelon, Garlic)으로 반환해줘.
+목록에 없는 식재료면 한국어 식품명(예: 수박, 마늘)으로 반환해줘.
 """
 
         def _call():
