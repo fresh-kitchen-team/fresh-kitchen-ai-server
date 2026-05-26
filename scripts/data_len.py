@@ -17,15 +17,17 @@ def count_dataset_images(root_dir):
             
         print(f"\n[📂 {split.upper()} 폴더]")
         # 하위 폴더(클래스) 목록 가져오기 및 정렬
-        class_folders = sorted([f for f in split_path.iterdir() if f.is_dir()])
-        
-        total_images = 0
+        class_folders = [f for f in split_path.iterdir() if f.is_dir()]
+        class_counts = []
         for class_folder in class_folders:
-            # 이미지 확장자들만 카운트
             images = [f for f in class_folder.glob('*') if f.suffix.lower() in ['.jpg', '.jpeg', '.png']]
-            count = len(images)
+            class_counts.append((class_folder.name, len(images)))
+        class_counts.sort(key=lambda x: x[1])
+
+        total_images = 0
+        for name, count in class_counts:
             total_images += count
-            print(f" - {class_folder.name:15}: {count}장")
+            print(f" - {name:15}: {count}장")
         print(f"📈 {split} 전체 합계: {total_images}장")
     print("=" * 40)
 
