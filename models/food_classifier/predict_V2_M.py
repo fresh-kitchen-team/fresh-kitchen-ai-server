@@ -169,19 +169,18 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
         class_list_str = "\n".join(f"- {c}" for c in class_names)
         prompt = f"""
 너는 식재료 이미지 분류 전문가야.
-아래 사진을 보고, 반드시 다음 클래스 목록 중 **정확히 하나**만 골라서 JSON으로 답해줘.
+아래 사진 속 식재료를 파악하고, 아래 규칙에 따라 JSON으로만 답해줘.
 
 [클래스 목록]
 {class_list_str}
 
-[카테고리 목록] 반드시 아래 중 하나로 분류해:
-VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC
+[규칙]
+- 사진 속 식재료가 클래스 목록에 있으면 반드시 목록의 클래스명 그대로 반환해줘.
+- 클래스 목록에 없는 식재료면 한국어 식품명(예: 수박, 망고)으로 반환해줘.
+- category는 반드시 아래 중 하나로 분류해: VEGETABLE, FRUIT, MEAT, SEAFOOD, DAIRY, GRAIN, SAUCE, DRINK, ETC
 
 [출력 형식] 다른 설명 없이 아래 JSON만 출력:
-{{"label": "클래스명", "category": "카테고리"}}
-
-목록에 있는 식재료면 반드시 목록의 클래스명 그대로 반환해줘.
-목록에 없는 식재료면 한국어 식품명(예: 수박, 마늘)으로 반환해줘.
+{{"label": "클래스명 또는 한국어 식품명", "category": "카테고리"}}
 """
 
         def _call():
