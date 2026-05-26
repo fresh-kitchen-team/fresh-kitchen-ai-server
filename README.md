@@ -411,6 +411,7 @@ Gemini API 오류 또는 타임아웃 시 빈 배열 `{ "items": [] }` 반환합
 - 기반 모델: `torchvision.models.efficientnet_v2_m` (ImageNet 사전학습 가중치)
 - 분류기 헤드: `Dropout(p=0.3)` + `Linear(in_features, num_classes)`
 - 클래스 수·클래스 목록은 체크포인트의 `class_names` 키에 저장되므로, 추론 시 `dataset/` 폴더 없이 복원 가능
+- 전체 클래스 목록 및 카테고리 매핑은 `models/food_classifier/predict_V2_M.py`의 `CLASS_CATEGORY`를 참고하세요 (현재 70개 클래스)
 
 #### 추론 전처리
 
