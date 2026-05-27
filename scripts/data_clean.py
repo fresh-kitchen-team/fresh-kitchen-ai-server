@@ -37,5 +37,6 @@ def clean_entire_dataset(root_dir):
 
 if __name__ == "__main__":
     _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    BASE_DIR = os.path.join(_BASE_DIR, 'dataset', 'train')
+    # train/val/test 전체에 대해 중복 제거 (split 간 데이터 누수도 함께 차단)
+    BASE_DIR = os.path.join(_BASE_DIR, 'dataset')
     clean_entire_dataset(BASE_DIR)

@@ -24,6 +24,9 @@ def split_all_classes():
     for class_dir in classes:
         class_name = class_dir.name
         val_class_path = Path(VAL_DIR) / class_name
+        # 멱등성 보장: 이미 분리된 val 이미지가 있으면 초기화
+        if val_class_path.exists():
+            shutil.rmtree(val_class_path)
         val_class_path.mkdir(parents=True, exist_ok=True)
 
         images = [f for f in class_dir.glob('*') if f.suffix.lower() in ['.jpg', '.jpeg', '.png']]
