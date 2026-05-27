@@ -15,16 +15,16 @@ from PIL import Image
 # ==========================================
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(_BASE_DIR, 'dataset')
-BATCH_SIZE = 8  # MPS 안정성 최우선
+BATCH_SIZE = 16
 LEARNING_RATE = 1e-4
 EPOCHS = 30
 PATIENCE = 5
 LABEL_SMOOTHING = 0.1
 GRAD_CLIP_NORM = 1.0
 UNFREEZE_EPOCH = 5  # 이 에폭 이후 전체 레이어 해동
-SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
-LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log.csv')
-NUM_WORKERS = 0 # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
+SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver4.pth')
+LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log.csv_5_27')
+NUM_WORKERS = 4
 
 def remove_corrupted_images(directory):
     print("🔍 손상된 이미지 검사를 시작합니다...")
@@ -63,7 +63,8 @@ def main():
         print(f"❌ 에러: {DATA_DIR}/train 폴더를 찾을 수 없습니다.")
         return
 
-    remove_corrupted_images(DATA_DIR)
+    for split in ['train', 'val']:
+        remove_corrupted_images(os.path.join(DATA_DIR, split))
 
     # --------------------------------------
     # 4. 데이터 전처리 (스마트폰 촬영 환경 최적화)
@@ -177,6 +178,9 @@ def main():
     best_loss_for_log = float('inf')
     patience_check = 0
 
+    # Mixed Precision: CUDA일 때만 활성화 (2~3배 속도 향상)
+    scaler = torch.amp.GradScaler(enabled=(device.type == "cuda"))
+
     # CSV 로그 초기화
     with open(LOG_PATH, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -215,17 +219,20 @@ def main():
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
-                optimizer.zero_grad()
+                optimizer.zero_grad(set_to_none=True)
 
                 with torch.set_grad_enabled(phase == 'train'):
-                    outputs = model(inputs)
-                    _, preds = torch.max(outputs, 1)
-                    loss = criterion(outputs, labels)
+                    with torch.amp.autocast(device_type=device.type, enabled=(device.type == "cuda")):
+                        outputs = model(inputs)
+                        _, preds = torch.max(outputs, 1)
+                        loss = criterion(outputs, labels)
 
                     if phase == 'train':
-                        loss.backward()
+                        scaler.scale(loss).backward()
+                        scaler.unscale_(optimizer)
                         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=GRAD_CLIP_NORM)
-                        optimizer.step()
+                        scaler.step(optimizer)
+                        scaler.update()
 
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
