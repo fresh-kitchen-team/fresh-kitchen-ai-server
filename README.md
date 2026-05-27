@@ -34,7 +34,7 @@
 └─────────────────┘                  │                                      │
                                      │  ┌────────────────────────────────┐  │
                                      │  │ POST /food-classification      │──┼─► EfficientNet V2-M
-                                     │  │                                │  │   ↓ confidence < 80%
+                                     │  │                                │  │   ↓ confidence < 70%
                                      │  │                                │  │   Gemini 2.5 Flash (폴백)
                                      │  ├────────────────────────────────┤  │
                                      │  │ POST /receipt-ocr              │──┼─► Document AI → Gemini 2.5 Flash
@@ -54,7 +54,7 @@
 
 ### 설계 포인트
 
-- **신뢰도 기반 자동 폴백** — 분류기가 80% 미만으로 확신하면 Gemini가 대신 판단하고, 결과 이미지를 `dataset/auto_labeled/`에 자동 저장 (self-improving 학습 데이터 축적).
+- **신뢰도 기반 자동 폴백** — 분류기가 70% 미만으로 확신하면 Gemini가 대신 판단하고, 결과 이미지를 `dataset/auto_labeled/`에 자동 저장 (self-improving 학습 데이터 축적).
 - **외부 API 통합** — Gemini는 단순 LLM이 아니라 **Vision + JSON 강제 모드** 로 사용. `response_mime_type="application/json"` 으로 파싱 안정성 확보.
 - **하드웨어 자동 감지** — Apple Silicon MPS → NVIDIA CUDA → CPU 순. Mixed Precision(AMP)은 CUDA에서만 활성화.
 
@@ -206,7 +206,7 @@ file: <식재료 이미지>
 **Response (3가지 케이스)**
 
 <details>
-<summary><b>✅ EfficientNet 직접 분류 — confidence ≥ 80%</b></summary>
+<summary><b>✅ EfficientNet 직접 분류 — confidence ≥ 70%</b></summary>
 
 ```json
 {
@@ -224,7 +224,7 @@ file: <식재료 이미지>
 </details>
 
 <details>
-<summary><b>🤖 Gemini 폴백 사용 — confidence < 80%, Gemini 성공</b></summary>
+<summary><b>🤖 Gemini 폴백 사용 — confidence < 70%, Gemini 성공</b></summary>
 
 ```json
 {
@@ -259,7 +259,7 @@ file: <식재료 이미지>
 
 | 값 | 상황 |
 |---|---|
-| `efficientnet` | 분류기가 80% 이상 확신 |
+| `efficientnet` | 분류기가 70% 이상 확신 |
 | `gemini` | 분류기 확신 부족 → Gemini 폴백 성공 (이미지 auto_labeled 저장) |
 | `efficientnet_fallback` | Gemini 폴백도 실패 → 분류기 원래 결과 사용 |
 
@@ -356,12 +356,12 @@ torchvision transforms (Resize 512 → CenterCrop 480 → Normalize ImageNet)
     ▼
 EfficientNet V2-M 추론 → softmax × 100 → top-1 확신도
     │
-    ├─ ≥ 80% ──────────────────► 즉시 반환 (source: "efficientnet")
+    ├─ ≥ 70% ──────────────────► 즉시 반환 (source: "efficientnet")
     │
-    └─ < 80%
+    └─ < 70%
             │
             ▼
-        이미지 1024px 이하로 LANCZOS 리사이즈 → JPEG 85% 재인코딩
+        이미지 2048px 이하로 LANCZOS 리사이즈 → JPEG 85% 재인코딩
             │
             ▼
         Gemini 2.5 Flash 호출 (temperature=0, JSON 강제, 타임아웃 60초)
@@ -396,7 +396,7 @@ EfficientNet V2-M 추론 → softmax × 100 → top-1 확신도
 냉장고 이미지
     │
     ▼
-이미지 1024px 이하로 LANCZOS 리사이즈 → JPEG 85% 재인코딩
+이미지 2048px 이하로 LANCZOS 리사이즈 → JPEG 85% 재인코딩
     │
     ▼
 Gemini 2.5 Flash Vision 호출 (temperature=0, JSON 강제, 타임아웃 60초)
@@ -695,7 +695,7 @@ python models/receipt_ocr/receipt_ocr.py          # dataset/test_real_image/rece
 <summary><b>Gemini 호출이 자꾸 타임아웃</b></summary>
 
 - `.env` 에 `GEMINI_TIMEOUT=60` 처럼 더 큰 값을 설정해 보세요
-- 이미지가 매우 크다면 사전에 클라이언트에서 리사이즈 권장 (서버도 1024px로 축소하긴 함)
+- 이미지가 매우 크다면 사전에 클라이언트에서 리사이즈 권장 (서버도 2048px로 축소하긴 함)
 - Gemini API quota 초과 가능성도 점검
 </details>
 
@@ -714,7 +714,7 @@ python models/receipt_ocr/receipt_ocr.py          # dataset/test_real_image/rece
 <details>
 <summary><b>음식 분류가 자주 <code>source: "gemini"</code> 로 떨어짐 (확신도 부족)</b></summary>
 
-- 확신도 임계값 조정: `models/food_classifier/predict_V2_M.py:23` 의 `CONFIDENCE_THRESHOLD` 변경
+- 확신도 임계값 조정: `models/food_classifier/predict_V2_M.py:23` 의 `CONFIDENCE_THRESHOLD` 변경 (현재 70.0)
 - 또는 `dataset/auto_labeled/` 에 축적된 이미지를 학습 데이터에 편입하여 재학습
 - 클래스 추가가 필요하면 `CLASS_CATEGORY` 딕셔너리에도 함께 추가 (누락 시 부팅 시 경고 로그 출력)
 </details>
