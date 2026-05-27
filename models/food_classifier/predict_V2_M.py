@@ -14,7 +14,7 @@ from google import genai
 from google.genai import types
 from models.category import normalize_category
 
-MAX_IMAGE_PX = 1024
+MAX_IMAGE_PX = 2048
 JPEG_QUALITY  = 85
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

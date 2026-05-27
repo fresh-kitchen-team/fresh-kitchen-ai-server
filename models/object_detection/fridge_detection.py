@@ -10,7 +10,7 @@ from google.genai import types
 from PIL import Image
 from models.category import normalize_category
 
-MAX_IMAGE_PX = 1024
+MAX_IMAGE_PX = 2048
 JPEG_QUALITY = 85
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
