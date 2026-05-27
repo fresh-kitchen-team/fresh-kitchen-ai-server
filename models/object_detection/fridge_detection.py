@@ -2,7 +2,6 @@ import os
 import io
 import json
 import logging
-import mimetypes
 import concurrent.futures
 from pathlib import Path
 from dotenv import load_dotenv
@@ -79,17 +78,12 @@ def detect_fridge_items(image_path: str) -> list:
                 )
             )
 
-        response = None
-        for attempt in range(2):
-            future = _executor.submit(_call)
-            try:
-                response = future.result(timeout=GEMINI_TIMEOUT)
-                break
-            except concurrent.futures.TimeoutError:
-                future.cancel()
-                logger.warning(f"Gemini 타임아웃 (시도 {attempt + 1}/2)")
-        if response is None:
-            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 × 2회)")
+        future = _executor.submit(_call)
+        try:
+            response = future.result(timeout=GEMINI_TIMEOUT)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
             return []
 
         items = json.loads(response.text)
