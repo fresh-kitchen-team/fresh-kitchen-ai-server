@@ -22,7 +22,7 @@ load_dotenv(os.path.join(_BASE_DIR, '.env'))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 CONFIDENCE_THRESHOLD = 80.0
 SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
-GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
+GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
 
 logger = logging.getLogger(__name__)
 
@@ -210,6 +210,11 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
             return {"error": "Gemini 타임아웃"}
 
         result = json.loads(response.text)
+        # Gemini 2.5가 종종 단일 객체를 [{...}] 배열로 감싸서 반환 → 첫 원소 추출
+        if isinstance(result, list):
+            result = result[0] if result else {}
+        if not isinstance(result, dict):
+            return {"error": "Gemini 응답 형식 오류"}
         return {
             "label": result.get("label", "unknown"),
             "category": result.get("category", "ETC"),

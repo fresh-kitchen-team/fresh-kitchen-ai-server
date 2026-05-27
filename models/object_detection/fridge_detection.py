@@ -16,7 +16,7 @@ JPEG_QUALITY = 85
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
+GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
 
 logger = logging.getLogger(__name__)
 

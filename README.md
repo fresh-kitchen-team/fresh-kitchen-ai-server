@@ -130,8 +130,8 @@ GEMINI_API_KEY=your-gemini-api-key
 # API 인증 토큰 (Bearer 방식, 백엔드 팀에 전달)
 AI_SECRET_TOKEN=your-secret-token
 
-# Gemini 호출 타임아웃 (초, 기본값 30 — 생략 가능)
-GEMINI_TIMEOUT=30
+# Gemini 호출 타임아웃 (초, 기본값 60 — 생략 가능)
+GEMINI_TIMEOUT=60
 ```
 
 | 변수 | 필수 | 설명 |
@@ -140,7 +140,7 @@ GEMINI_TIMEOUT=30
 | `PROJECT_ID` / `PROCESSOR_ID` / `LOCATION` | ✓ | Document AI 프로세서 정보 |
 | `GEMINI_API_KEY` | ✓ | Gemini API 키 (3개 파이프라인 공통) |
 | `AI_SECRET_TOKEN` | ✓ | 백엔드 ↔ AI 서버 간 Bearer 토큰. 누락 시 서버가 시작을 거부합니다 |
-| `GEMINI_TIMEOUT` |  | Gemini 호출 타임아웃 (기본 30초) |
+| `GEMINI_TIMEOUT` |  | Gemini 호출 타임아웃 (기본 60초) |
 
 **토큰 생성**:
 ```bash
@@ -364,7 +364,7 @@ EfficientNet V2-M 추론 → softmax × 100 → top-1 확신도
         이미지 1024px 이하로 LANCZOS 리사이즈 → JPEG 85% 재인코딩
             │
             ▼
-        Gemini 2.5 Flash 호출 (temperature=0, JSON 강제, 타임아웃 30초)
+        Gemini 2.5 Flash 호출 (temperature=0, JSON 강제, 타임아웃 60초)
             │
             ├─ 성공 ──► auto_labeled/{label}/ 자동 저장 → 반환 (source: "gemini")
             │
@@ -399,7 +399,7 @@ EfficientNet V2-M 추론 → softmax × 100 → top-1 확신도
 이미지 1024px 이하로 LANCZOS 리사이즈 → JPEG 85% 재인코딩
     │
     ▼
-Gemini 2.5 Flash Vision 호출 (temperature=0, JSON 강제, 타임아웃 30초)
+Gemini 2.5 Flash Vision 호출 (temperature=0, JSON 강제, 타임아웃 60초)
     │   프롬프트 규칙:
     │   - 식재료·식품·음료만 포함, 브랜드명 제거, 한글 출력
     │   - 뚜껑/포장재로 가려진 항목 제외

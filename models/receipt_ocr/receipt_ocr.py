@@ -29,7 +29,7 @@ project_id = os.getenv("PROJECT_ID")
 processor_id = os.getenv("PROCESSOR_ID")
 location = os.getenv("LOCATION")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
+GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
 
 logger = logging.getLogger(__name__)
 
