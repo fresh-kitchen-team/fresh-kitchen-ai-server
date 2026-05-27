@@ -26,7 +26,7 @@
 | **분류 정확도** | val_acc **96.60%** (70 클래스, 한국 식재료) |
 | **클래스 수 확장** | ver2: 35개 → ver5: **70개** (2배) |
 | **모델 진화** | 4회 재학습으로 +2.04%p 누적 개선 |
-| **응답 시간** | EfficientNet 직접 분류 ~150ms / Gemini 폴백 ~2~3s |
+| **응답 시간** | EfficientNet 직접 분류 ~150ms / Gemini 폴백 ~3s |
 | **자동 데이터 수집** | Gemini 폴백 시 `auto_labeled/` 에 자동 누적 (재학습 데이터 자가 축적) |
 | **운영 안정성** | 토큰 인증 · 매직바이트 이중 검증 · 타임아웃 제어 · 500 오류 비노출 |
 
@@ -55,7 +55,28 @@
 
 ## 주요 기술적 의사결정
 
-### 1. 신뢰도 기반 자동 폴백 (Self-improving 시스템)
+### 1. 백본 모델 선택 — EfficientNet-E0 → V2-M
+
+**문제**: 초기에는 EfficientNet-E0 으로 32 클래스 분류기를 만들었음. 32 클래스에서는 정확도가 나쁘지 않았으나, 최종 목표는 70+ 클래스 확장이라 "클래스 수가 늘어나도 성능이 유지될까?" 가 풀리지 않았음.
+
+**해결**: 백본을 EfficientNet **V2-M** 으로 교체. 같은 EfficientNet 계열이지만 V2 는 학습 안정성·표현력이 한 단계 위라 클래스 확장 여지가 충분.
+
+**효과**: 35 → 60 → 70 클래스로 단계적으로 확장하는 동안 val_acc 94~96% 대를 유지. 이후 모든 진화(데이터 확장·하이퍼파라미터 튜닝)의 기반이 됨.
+
+### 2. Progressive Unfreezing 파인튜닝
+
+**진화 과정**: 학습 가능 범위를 점진적으로 풀면서 4 단계에 걸쳐 정착.
+
+1. **초기 — 가중치 전체 학습**: 200~500장 규모 데이터에 비해 학습 파라미터가 너무 많아 과적합·표현 붕괴.
+2. **1차 — backbone 전체 freeze, head 만 학습**: 안정적이지만 한국 식재료 도메인 특화가 약함.
+3. **2차 — `features[-4:]` 마지막 4개 블록 + head 해동**: 표현력은 향상됐으나 catastrophic forgetting 우려.
+4. **현재 — Progressive Unfreezing** (`training/train_EfficientNet_V2_M.py`):
+   - Epoch 5 까지 head 위주로 학습 (LR=1e-4)
+   - Epoch 5 부터 backbone 전체 해동 + 별도 param_group 으로 LR=1e-5 (10배 작게)
+
+**효과**: 사전학습 표현을 보존하면서 도메인 특화. 같은 데이터에서 head-only 학습 대비 안정적으로 수렴.
+
+### 3. 신뢰도 기반 자동 폴백 (Self-improving 시스템)
 
 **문제**: 70개 클래스 분류기는 학습 데이터에 없는 식재료(예: 수박, 망고)에 대해 강제로 잘못된 라벨을 반환함.
 
@@ -66,18 +87,7 @@
 
 **효과**: 모델 한계를 외부 LLM으로 즉시 보완 + 학습 데이터 수집 자동화. 운영하면서 데이터가 늘어남.
 
-### 2. Progressive Unfreezing 파인튜닝
-
-**문제**: ImageNet 사전학습 가중치를 처음부터 모두 풀면 catastrophic forgetting 발생.
-
-**해결** (training/train_EfficientNet_V2_M.py):
-1. 전체 freeze → `features[-4:]` 마지막 4개 블록 + 분류기 헤드만 해동
-2. Epoch 5까지 head 위주로 학습 (LR=1e-4)
-3. Epoch 5부터 backbone 전체 해동 + 별도 param_group 으로 LR=1e-5 (10배 작게)
-
-**효과**: 사전학습 표현을 보존하면서 도메인 특화. 같은 데이터에서 head-only 학습 대비 안정적으로 수렴.
-
-### 3. 2단계 OCR — Document AI + Gemini JSON 강제
+### 4. 2단계 OCR — Document AI + Gemini JSON 강제
 
 **문제**: Document AI는 텍스트 추출은 잘하지만 **"구매일 추출"** 과 **"식재료만 골라내기"** 같은 의미 기반 작업을 못함.
 
@@ -89,13 +99,23 @@
 
 **효과**: 브랜드명 자동 제거 (`"CJ 비비고 만두"` → `"만두"`), 카드명·환불·할인·합계 등 비식재료 완전 제외.
 
-### 4. 외부 API 타임아웃 제어
+### 5. 냉장고 감지 — YOLO 대신 Gemini Vision 채택
+
+**문제**: 초기에는 YOLO 기반 객체 탐지로 냉장고 식재료 감지를 검토했으나, 두 가지 본질적 한계 확인:
+- 70+ 식재료 클래스에 대한 bounding box 라벨링 데이터를 확보·유지하기 비현실적
+- 포장지·용기에 가려진 식재료(우유팩·요거트·캔류)는 시각 객체 탐지로 잡지 못함
+
+**해결**: Gemini 2.5 Flash Vision 으로 전환. 사진 한 장을 그대로 입력하면 LLM이 추론으로 항목을 나열 → 라벨링 비용 0.
+
+**효과**: 학습 데이터 0장으로 운영 시작. LLM 특유의 동의어 중복·포괄어 출력은 프롬프트로 제어 (아래 "마주친 문제" 4·5번 참고).
+
+### 6. 외부 API 타임아웃 제어
 
 **문제**: Gemini API는 가끔 응답이 60초 이상 지연되어 서버 hang을 유발.
 
 **해결**: 각 모듈에서 모듈 수준 싱글톤 `ThreadPoolExecutor(max_workers=1)` 를 두고, `future.result(timeout=GEMINI_TIMEOUT)` 로 강제 타임아웃 → 실패 시 빈 결과 반환 (재시도 없음, 사용자 대기시간 최소화).
 
-### 5. 하드웨어 자동 감지
+### 7. 하드웨어 자동 감지
 
 ```python
 device = torch.device(
@@ -106,7 +126,7 @@ device = torch.device(
 
 Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precision(AMP) 은 CUDA 에서만 활성화 (MPS는 GradScaler 불안정).
 
-### 6. 보안 설계
+### 8. 보안 설계
 
 | 항목 | 구현 |
 |---|---|
