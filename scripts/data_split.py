@@ -5,9 +5,9 @@ from pathlib import Path
 
 # 1. 설정
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TRAIN_DIR = os.path.join(_BASE_DIR, 'dataset', 'val')
-VAL_DIR = os.path.join(_BASE_DIR, 'dataset', 'train')
-SPLIT_RATIO = 1  # train에서 val로 이동할 비율
+TRAIN_DIR = os.path.join(_BASE_DIR, 'dataset', 'train')
+VAL_DIR = os.path.join(_BASE_DIR, 'dataset', 'val')
+SPLIT_RATIO = 0.2  # train에서 val로 이동할 비율 (20%)
 
 def split_all_classes():
     train_path = Path(TRAIN_DIR)
