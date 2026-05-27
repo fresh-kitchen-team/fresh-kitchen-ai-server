@@ -22,7 +22,7 @@ cp .env.example .env
 # Fill in: GOOGLE_APPLICATION_CREDENTIALS, PROJECT_ID, PROCESSOR_ID, LOCATION, GEMINI_API_KEY
 
 # Model weights (not in git — obtain from team drive)
-# Place best_food_model_v2_m_ver4.pth in the project root
+# Place best_food_model_v2_m_ver5.pth in the project root
 ```
 
 ## Running the Server

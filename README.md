@@ -85,7 +85,7 @@ cp .env.example .env
 # .env 편집기로 열어 API 키 입력 (아래 [환경 변수] 참고)
 
 # 모델 가중치 배치 (팀 드라이브에서 다운로드)
-# best_food_model_v2_m_ver4.pth → 프로젝트 루트
+# best_food_model_v2_m_ver5.pth → 프로젝트 루트
 ```
 
 ### 3. 서버 실행
@@ -528,18 +528,30 @@ python models/food_classifier/test_V2_M.py
 
 ## 학습 이력
 
-> ver2, ver3 는 영문 클래스명을 쓰던 구버전입니다. **현재 운영 모델은 ver4 (한글 클래스명, 70개 클래스)**.
+> ver2, ver3 는 영문 클래스명을 쓰던 구버전입니다. **현재 운영 모델은 ver5 (한글 클래스명, 70개 클래스)**.
 
-### ver4 — `docs/training_log_5_27.csv` (현재 운영본)
+### ver5 — `docs/training_log_5_28.csv` (현재 운영본)
+| 항목 | 값 |
+|---|---|
+| 학습 환경 | NVIDIA GPU (CUDA, AMP 활성화) |
+| 클래스 수 | 70개 (한글) |
+| 데이터셋 | Train 12,714장 / Val 3,147장 |
+| 학습 완료 | 37 Epoch (Early Stopping, patience=8, max 50 epoch) |
+| **최고 val_acc** | **96.60%** (Epoch 29) |
+| 최고 성능 시점 지표 | train_loss=0.747 / train_acc=99.86% / val_loss=0.8829 / val_acc=96.60% |
+| LR (최고 성능 시점) | head=6.25e-6, backbone=6.25e-7 (ReduceLROnPlateau 자동 반감) |
+
+### ver4 — `docs/training_log_5_27.csv`
 | 항목 | 값 |
 |---|---|
 | 학습 환경 | NVIDIA GPU (CUDA, AMP 활성화) |
 | 클래스 수 | 70개 (한글) |
 | 데이터셋 | Train 12,714장 / Val 3,147장 |
 | 학습 완료 | 12 Epoch (Early Stopping, patience=5) |
-| **최고 val_acc** | **95.42%** (Epoch 7) |
+| 최고 val_acc | 95.42% (Epoch 7) |
 | 최고 성능 시점 지표 | train_loss=0.824 / train_acc=97.94% / val_loss=0.9285 / val_acc=95.42% |
 | LR (최고 성능 시점) | head=1e-4, backbone=1e-5 (Progressive Unfreezing 적용 후) |
+| 비고 | patience=5가 70클래스에 너무 짧아 backbone 6 에폭만 학습 후 종료 → ver5로 개선 |
 
 ### ver3 — `docs/training_log_5_13.csv`
 | 항목 | 값 |
@@ -678,9 +690,9 @@ python models/receipt_ocr/receipt_ocr.py          # dataset/test_real_image/rece
 </details>
 
 <details>
-<summary><b>모델 로딩 실패 — <code>FileNotFoundError: best_food_model_v2_m_ver4.pth</code></b></summary>
+<summary><b>모델 로딩 실패 — <code>FileNotFoundError: best_food_model_v2_m_ver5.pth</code></b></summary>
 
-가중치 파일을 프로젝트 루트에 놓아야 합니다. 팀 드라이브에서 다운로드 후 `fresh-kitchen-ai-server/best_food_model_v2_m_ver4.pth` 경로에 저장하세요.
+가중치 파일을 프로젝트 루트에 놓아야 합니다. 팀 드라이브에서 다운로드 후 `fresh-kitchen-ai-server/best_food_model_v2_m_ver5.pth` 경로에 저장하세요.
 </details>
 
 <details>
@@ -735,7 +747,7 @@ fresh-kitchen-ai-server/
 ├── .gitignore
 ├── README.md
 ├── CLAUDE.md                                # AI 코딩 어시스턴트 작업 규칙
-├── best_food_model_v2_m_ver4.pth            # 운영 모델 (git 제외, ~200MB)
+├── best_food_model_v2_m_ver5.pth            # 운영 모델 (git 제외, ~200MB)
 │
 ├── models/
 │   ├── category.py                          # 카테고리 enum + normalize_category()
@@ -761,8 +773,10 @@ fresh-kitchen-ai-server/
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
 │   ├── training_log_5_3.csv                 # ver2 학습 로그
 │   ├── training_log_5_13.csv                # ver3 학습 로그
-│   ├── training_log_5_27.csv                # ver4 학습 로그 (최신)
-│   └── training_log_class_acc_5_27.csv      # ver4 클래스별 정확도
+│   ├── training_log_5_27.csv                # ver4 학습 로그
+│   ├── training_log_class_acc_5_27.csv      # ver4 클래스별 정확도
+│   ├── training_log_5_28.csv                # ver5 학습 로그 (최신)
+│   └── training_log_class_acc_5_28.csv      # ver5 클래스별 정확도
 │
 ├── receipt_model/                           # GCP 서비스 계정 키 (git 제외)
 │   └── receipt-app-*.json
