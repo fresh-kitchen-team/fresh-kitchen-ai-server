@@ -20,7 +20,7 @@ JPEG_QUALITY  = 85
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_BASE_DIR, '.env'))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-CONFIDENCE_THRESHOLD = 80.0
+CONFIDENCE_THRESHOLD = 70.0
 SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
 GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
 
