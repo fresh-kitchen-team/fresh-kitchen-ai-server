@@ -33,6 +33,14 @@ GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "30"))
 
 logger = logging.getLogger(__name__)
 
+_missing_env = [k for k, v in {
+    "PROJECT_ID": project_id,
+    "PROCESSOR_ID": processor_id,
+    "LOCATION": location,
+}.items() if not v]
+if _missing_env:
+    logger.warning(f"영수증 OCR 환경변수 누락: {_missing_env} — Document AI 호출이 실패할 수 있습니다.")
+
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _docai_client = None
 try:
