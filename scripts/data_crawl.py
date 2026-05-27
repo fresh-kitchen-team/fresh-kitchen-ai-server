@@ -4,7 +4,7 @@ import io
 import time
 import requests
 from PIL import Image
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 # 1. 환경 설정
 sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
