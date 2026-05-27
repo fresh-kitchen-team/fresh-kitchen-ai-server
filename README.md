@@ -517,7 +517,11 @@ python models/food_classifier/test_V2_M.py
 |---|---|
 | 학습 환경 | NVIDIA GPU (CUDA, AMP 활성화) |
 | 클래스 수 | 70개 (한글) |
-| 변경점 | 데이터 증강 강화, AMP 도입, 라면→라면사리·소시지→햄 등 클래스명 정비 |
+| 데이터셋 | Train 12,714장 / Val 3,147장 |
+| 학습 완료 | 12 Epoch (Early Stopping, patience=5) |
+| **최고 val_acc** | **95.42%** (Epoch 7) |
+| 최고 성능 시점 지표 | train_loss=0.824 / train_acc=97.94% / val_loss=0.9285 / val_acc=95.42% |
+| LR (최고 성능 시점) | head=1e-4, backbone=1e-5 (Progressive Unfreezing 적용 후) |
 
 ### ver3 — `docs/training_log_5_13.csv`
 | 항목 | 값 |
