@@ -1,55 +1,28 @@
-annotated-doc==0.0.4
-annotated-types==0.7.0
-anyio==4.13.0
-certifi==2026.4.22
-cffi==2.0.0
-charset-normalizer==3.4.7
-click==8.3.3
-cryptography==48.0.0
-distro==1.9.0
-ddgs>=2.0.0
-lxml>=6.1.0
-exceptiongroup==1.3.1
+# ─────────────────────────────────────────────
+# fresh-kitchen-ai-server — Python 3.10.19
+# ─────────────────────────────────────────────
+# 직접 의존성만 명시합니다. transitive 의존성(starlette, numpy, grpcio 등)은
+# pip가 자동으로 해결합니다.
+
+# 웹 서버
 fastapi==0.136.1
-filelock==3.29.0
-fsspec==2026.4.0
-google-api-core==2.30.3
-google-auth==2.50.0
-google-cloud-documentai==3.14.0
-google-genai==1.75.0
-googleapis-common-protos==1.74.0
-grpcio==1.80.0
-grpcio-status==1.80.0
-h11==0.16.0
-httpcore==1.0.9
-httpx==0.28.1
-idna==3.13
-Jinja2==3.1.6
-MarkupSafe==3.0.3
-mpmath==1.3.0
-networkx==3.4.2
-numpy==2.2.6
-packaging==26.0
-pillow==12.2.0
-primp==1.3.1
-proto-plus==1.27.2
-protobuf==6.33.6
-pyasn1==0.6.3
-pyasn1_modules==0.4.2
-pycparser==3.0
-pydantic==2.13.4
-pydantic_core==2.46.4
-pyparsing==3.3.2
+uvicorn==0.46.0
+python-multipart==0.0.27   # FastAPI File 업로드용
+
+# 환경 변수
 python-dotenv==1.2.2
-python-multipart==0.0.27
-PyYAML==6.0.3
-requests==2.33.1
-sniffio==1.3.1
-starlette==1.0.0
-sympy==1.14.0
+
+# 딥러닝 (Food Classifier 추론 / 학습)
 torch==2.11.0
 torchvision==0.26.0
-typing-inspection==0.4.2
-typing_extensions==4.15.0
-urllib3==2.6.3
-uvicorn==0.46.0
+
+# 이미지 처리
+pillow==12.2.0
+
+# Google Cloud (영수증 OCR) + Gemini (3개 파이프라인 공용)
+google-cloud-documentai==3.14.0
+google-genai==1.75.0
+
+# 이미지 크롤러 (scripts/data_crawl.py)
+ddgs>=2.0.0
+requests==2.33.1
