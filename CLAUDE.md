@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `fresh-kitchen-ai-server` is the AI backend for the fresh-kitchen application. It provides three independent ML pipelines:
 
 1. **Food Classifier** — EfficientNet V2-M identifies food items from images; falls back to Gemini Vision if confidence < 80%
-2. **Receipt OCR** — Google Document AI extracts text from receipt images; Gemini filters results to food items only
+2. **Receipt OCR** — Google Document AI extracts text from receipt images; Gemini extracts purchase date (`purchasedAt`) and filters to food items only, also assigning a category
 3. **Fridge Detection** — Gemini Vision identifies food items in refrigerator photos
 
 ## Setup
@@ -22,7 +22,7 @@ cp .env.example .env
 # Fill in: GOOGLE_APPLICATION_CREDENTIALS, PROJECT_ID, PROCESSOR_ID, LOCATION, GEMINI_API_KEY
 
 # Model weights (not in git — obtain from team drive)
-# Place best_food_model_v2_m_ver3.pth in the project root
+# Place best_food_model_v2_m_ver4.pth in the project root
 ```
 
 ## Running the Server
@@ -77,10 +77,10 @@ python scripts/data_len.py      # Print class distribution stats
 ### Two-Stage OCR (Receipt)
 `models/receipt_ocr/receipt_ocr.py`:
 - Stage 1: `process_receipt_raw()` calls Google Document AI for text extraction
-- Stage 2: `filter_with_gemini()` sends extracted text to Gemini to keep only food items; forces JSON response via `response_mime_type="application/json"`
+- Stage 2: `filter_with_gemini()` sends extracted text to Gemini to extract `purchasedAt` (YYYY-MM-DD) and filter to food items with category; forces JSON response via `response_mime_type="application/json"`
 
 ### Hardware Acceleration
-Food Classifier와 Training 스크립트는 `mps` (Apple Silicon) → `cuda` → `cpu` 순으로 자동 감지. Batch size는 MPS 안정성을 위해 8로 제한. Fridge Detection은 Gemini API 호출 방식으로 하드웨어 가속 미적용.
+Food Classifier와 Training 스크립트는 `mps` (Apple Silicon) → `cuda` → `cpu` 순으로 자동 감지. Training 기본 BATCH_SIZE=16 / NUM_WORKERS=4 이며, Mixed Precision(AMP)은 CUDA에서만 활성화된다. Fridge Detection은 Gemini API 호출 방식으로 하드웨어 가속 미적용.
 
 ### Dataset Structure
 ```
