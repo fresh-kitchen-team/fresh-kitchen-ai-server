@@ -17,14 +17,14 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(_BASE_DIR, 'dataset')
 BATCH_SIZE = 16
 LEARNING_RATE = 1e-4
-EPOCHS = 30
-PATIENCE = 5
+EPOCHS = 50
+PATIENCE = 8
 LABEL_SMOOTHING = 0.1
 GRAD_CLIP_NORM = 1.0
 UNFREEZE_EPOCH = 5  # 이 에폭 이후 전체 레이어 해동
-SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver4.pth')
-LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_5_27.csv')
-CLASS_ACC_LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_class_acc_5_27.csv')
+SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver5.pth')
+LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_5_28.csv')
+CLASS_ACC_LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_class_acc_5_28.csv')
 NUM_WORKERS = 4
 
 def remove_corrupted_images(directory):
