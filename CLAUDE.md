@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `fresh-kitchen-ai-server` is the AI backend for the fresh-kitchen application. It provides three independent ML pipelines:
 
-1. **Food Classifier** — EfficientNet V2-M identifies food items from images; falls back to Gemini Vision if confidence < 70%
+1. **Food Classifier** — EfficientNet V2-M identifies food items from images; falls back to Gemini Vision if confidence < 80%
 2. **Receipt OCR** — Google Document AI extracts text from receipt images; Gemini extracts purchase date (`purchasedAt`) and filters to food items only, also assigning a category
 3. **Fridge Detection** — Gemini Vision identifies food items in refrigerator photos
 
@@ -71,7 +71,7 @@ python scripts/data_len.py      # Print class distribution stats
 ### Confidence-Based Fallback (Food Classifier)
 `models/food_classifier/predict_V2_M.py` implements a two-stage prediction:
 - EfficientNet V2-M is the primary model (loaded once via `load_food_model()`)
-- If softmax confidence < 70%, `gemini_predict()` is called with the full class list
+- If softmax confidence < 80%, `gemini_predict()` is called with the full class list
 - Gemini predictions are auto-saved to `dataset/auto_labeled/{label}/` to improve future training
 
 ### Two-Stage OCR (Receipt)
