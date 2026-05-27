@@ -458,8 +458,8 @@ python training/train_EfficientNet_V2_M.py
 | 손실 함수 | CrossEntropy + Label Smoothing=0.1 |
 | Gradient Clipping | max_norm=1.0 |
 | LR Scheduler | ReduceLROnPlateau (mode=min, factor=0.5, patience=3) |
-| 최대 Epoch | 30 |
-| Early Stopping | val_acc 기준 patience=5 |
+| 최대 Epoch | 50 |
+| Early Stopping | val_acc 기준 patience=8 |
 | Dropout (분류기 헤드) | 0.3 |
 | DataLoader workers | 4 |
 | Mixed Precision (AMP) | CUDA에서만 활성화 (`torch.amp.GradScaler`) |

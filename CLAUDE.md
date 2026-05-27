@@ -50,7 +50,7 @@ python models/object_detection/fridge_detection.py
 # 분류 모델 정확도 평가
 python models/food_classifier/test_V2_M.py
 
-# 분류 모델 학습 (최대 30 epoch, early stopping patience=5)
+# 분류 모델 학습 (최대 50 epoch, early stopping patience=8)
 python training/train_EfficientNet_V2_M.py
 ```
 
