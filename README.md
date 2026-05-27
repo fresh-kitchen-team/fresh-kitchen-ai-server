@@ -772,7 +772,7 @@ fresh-kitchen-ai-server/
 │
 ├── dataset/                                 # 학습 데이터 (git 제외)
 │   ├── train/, val/, test/
-│   ├── test_real_image/                     # 영수증 OCR 단독 테스트
+│   ├── test_real_image/                     # 3개 파이프라인 실제 테스트용 이미지
 │   ├── crawldata/                           # 크롤링 원본
 │   └── auto_labeled/                        # Gemini 자동 라벨링 결과
 │
