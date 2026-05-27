@@ -247,6 +247,7 @@ fresh-kitchen-ai-server/
 ├── .env.example                             # 환경 변수 템플릿
 ├── README.md
 ├── CLAUDE.md                                # AI 코딩 어시스턴트 작업 규칙
+├── DEVLOG.md                                # 개발 의사결정·문제 해결·모델 진화 기록
 ├── best_food_model_v2_m_ver5.pth            # 운영 모델 (git 제외, ~200MB)
 │
 ├── models/
@@ -270,7 +271,6 @@ fresh-kitchen-ai-server/
 │   └── data_len.py
 │
 ├── docs/
-│   ├── DEVLOG.md                            # 개발 의사결정·문제 해결·모델 진화 기록
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
 │   └── training_log_*.csv                   # 학습 로그
 │
