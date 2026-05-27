@@ -11,14 +11,14 @@
 # 학습 데이터셋 / 로컬 테스트 이미지
 # ─────────────────────────────────────────────
 dataset/
-picture_model/
+samples/
 
 # ─────────────────────────────────────────────
 # 민감 정보 — 절대 커밋 금지
 # ─────────────────────────────────────────────
-# Google Cloud 서비스 계정 키 (receipt_model/ 아래에 위치)
+# Google Cloud 서비스 계정 키 (credentials/ 아래에 위치)
 receipt-app-*.json
-receipt_model/
+credentials/
 # 환경 변수
 .env
 .env.local

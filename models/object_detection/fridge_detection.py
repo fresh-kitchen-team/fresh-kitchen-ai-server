@@ -115,7 +115,7 @@ def detect_fridge_items(image_path: str) -> list:
 
 
 if __name__ == "__main__":
-    test_image = os.path.join(str(_PROJECT_ROOT), "picture_model", "predict", "fridge_test.jpeg")
+    test_image = os.path.join(str(_PROJECT_ROOT), "samples", "predict", "fridge_test.jpeg")
     print(f"🔍 '{test_image}' 분석 중...")
     result = detect_fridge_items(test_image)
     print(f"\n🥦 감지된 식재료 목록:")

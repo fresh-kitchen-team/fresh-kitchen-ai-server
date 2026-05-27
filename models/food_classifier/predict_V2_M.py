@@ -314,7 +314,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 # ==========================================
 if __name__ == '__main__':
     _MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver5.pth')
-    TEST_IMAGE_PATH = os.path.join(_BASE_DIR, 'picture_model', 'predict', 'beef1.jpeg')
+    TEST_IMAGE_PATH = os.path.join(_BASE_DIR, 'samples', 'predict', 'beef1.jpeg')
 
     my_model, my_device, class_names = load_food_model(_MODEL_PATH)
 

@@ -69,7 +69,7 @@ TOKEN=$(grep AI_SECRET_TOKEN .env | cut -d= -f2)
 
 curl -X POST http://127.0.0.1:8000/internal/v1/food-classification \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@picture_model/predict/beef1.jpeg"
+  -F "file=@samples/predict/beef1.jpeg"
 ```
 
 ---
@@ -80,7 +80,7 @@ curl -X POST http://127.0.0.1:8000/internal/v1/food-classification \
 
 ```env
 # Google Cloud Document AI (영수증 OCR)
-GOOGLE_APPLICATION_CREDENTIALS=./receipt_model/your-service-account-key.json
+GOOGLE_APPLICATION_CREDENTIALS=./credentials/your-service-account-key.json
 PROJECT_ID=your-gcp-project-id
 PROCESSOR_ID=your-document-ai-processor-id
 LOCATION=us
@@ -274,8 +274,8 @@ fresh-kitchen-ai-server/
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
 │   └── training_log_*.csv                   # 학습 로그
 │
-├── receipt_model/                           # GCP 서비스 계정 키 (git 제외)
-├── picture_model/                           # 로컬 단독 실행 테스트 이미지 (git 제외)
+├── credentials/                            # GCP 서비스 계정 키 (git 제외)
+├── samples/                                # 로컬 단독 실행 테스트 이미지 (git 제외)
 ├── dataset/                                 # 학습 데이터 (git 제외)
 └── server.log                               # uvicorn 런타임 로그 (git 제외)
 ```
@@ -308,4 +308,4 @@ fresh-kitchen-ai-server/
 
 ### 보안 — 절대 커밋 금지
 
-`.env` · `receipt-app-*.json` · `receipt_model/` · `*.pth` / `*.pt` · `dataset/` · `picture_model/` — 모두 `.gitignore` 등록됨.
+`.env` · `receipt-app-*.json` · `credentials/` · `*.pth` / `*.pt` · `dataset/` · `samples/` — 모두 `.gitignore` 등록됨.
