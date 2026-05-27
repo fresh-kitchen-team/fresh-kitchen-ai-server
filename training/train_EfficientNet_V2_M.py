@@ -23,7 +23,8 @@ LABEL_SMOOTHING = 0.1
 GRAD_CLIP_NORM = 1.0
 UNFREEZE_EPOCH = 5  # 이 에폭 이후 전체 레이어 해동
 SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver4.pth')
-LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log.csv_5_27')
+LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_5_27.csv')
+CLASS_ACC_LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_class_acc_5_27.csv')
 NUM_WORKERS = 4
 
 def remove_corrupted_images(directory):
@@ -136,7 +137,7 @@ def main():
     # --------------------------------------
     # 6. 모델 설계 (EfficientNet-V2-M)
     # --------------------------------------
-    print("\n🤖 EfficientNet_V2-M 모델 로드 중...")
+    print("\n🤖 EfficientNet_v2_m 모델 로드 중...")
     model = models.efficientnet_v2_m(weights=models.EfficientNet_V2_M_Weights.DEFAULT)
 
     for param in model.parameters():
@@ -321,7 +322,7 @@ def main():
     print("="*45)
 
     # 클래스별 정확도 CSV 저장 (베스트 모델 기준)
-    class_acc_log_path = LOG_PATH.replace('.csv', '_class_accuracy.csv')
+    class_acc_log_path = CLASS_ACC_LOG_PATH
     with open(class_acc_log_path, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['class', 'correct', 'total', 'accuracy'])
