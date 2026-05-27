@@ -9,7 +9,7 @@ import os
 # ==========================================
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(_BASE_DIR, 'dataset', 'test')
-MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
+MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver4.pth')
 BATCH_SIZE = 8  # MPS 안정성 최우선
 NUM_WORKERS = 0  # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
 
@@ -66,7 +66,7 @@ def main():
             return
     except FileNotFoundError:
         print(f"❌ 오류: '{MODEL_PATH}' 파일을 찾을 수 없습니다.")
-        print("   💡 먼저 train_EfficientNet_V2-M.py를 실행해서 모델을 학습해주세요.")
+        print("   💡 먼저 train_EfficientNet_V2_M.py를 실행해서 모델을 학습해주세요.")
         return
     except Exception as e:
         print(f"❌ 모델 로드 중 오류 발생: {e}")

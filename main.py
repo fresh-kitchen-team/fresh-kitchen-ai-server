@@ -49,7 +49,7 @@ food_classes = None
 async def lifespan(app: FastAPI):
     global food_model, food_device, food_classes
     food_model, food_device, food_classes = load_food_model(
-        os.path.join(_BASE_DIR, "best_food_model_v2_m_ver3.pth")
+        os.path.join(_BASE_DIR, "best_food_model_v2_m_ver4.pth")
     )
     yield
 

@@ -136,6 +136,11 @@ def load_food_model(model_path: str):
         model.eval()
         logger.info("식재료 인식 모델이 메모리에 로드되었습니다.")
 
+        # CLASS_CATEGORY 누락 감지 — 신규 클래스가 추가되면 사일런트 "ETC" 매핑을 막기 위해 경고
+        missing = [c for c in class_names if c not in CLASS_CATEGORY]
+        if missing:
+            logger.warning(f"CLASS_CATEGORY에 누락된 클래스 {len(missing)}개: {missing} → ETC로 처리됩니다.")
+
         return model, device, class_names
 
     except Exception as e:
@@ -303,7 +308,7 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 # [Main 블록] 단독 실행 테스트용
 # ==========================================
 if __name__ == '__main__':
-    _MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver3.pth')
+    _MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver4.pth')
     TEST_IMAGE_PATH = os.path.join(_BASE_DIR, 'picture_model', 'predict', 'beef1.jpeg')
 
     my_model, my_device, class_names = load_food_model(_MODEL_PATH)
