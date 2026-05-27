@@ -29,9 +29,9 @@ develop → main
 
 ---
 
-## 4. Commit Message Convention
+## 3. Commit Message Convention
 
-### 4.1 Format
+### 3.1 Format
 
 Type(Scope) : Description
 
@@ -52,7 +52,7 @@ Type(Scope) : Description
 
 ---
 
-### 4.2 Writing Rules
+### 3.2 Writing Rules
 
 #### Language
 
@@ -76,7 +76,7 @@ create model
 
 ---
 
-### 4.3 Allowed Types
+### 3.3 Allowed Types
 
 | Type       | Description                         |
 |------------|-------------------------------------|
@@ -93,7 +93,7 @@ create model
 
 ---
 
-### 4.4 Type Usage Guide
+### 3.4 Type Usage Guide
 
 #### Feat
 
@@ -137,7 +137,7 @@ Implement(Detection) : YOLOv8n 물체 감지 로직 적용
 
 ---
 
-### 4.5 Scope Rules
+### 3.5 Scope Rules
 
 Scope represents the main affected domain.
 
@@ -162,7 +162,7 @@ Chore
 
 ---
 
-## 5. Pull Request Convention
+## 4. Pull Request Convention
 
 ### Format
 
@@ -186,7 +186,7 @@ Docs: Update API endpoint description
 
 ---
 
-## 6. Commit vs PR Roles
+## 5. Commit vs PR Roles
 
 ### Commit
 
@@ -204,7 +204,7 @@ Feat: Add Gemini Vision fallback for food classifier
 
 ---
 
-## 7. Best Practices
+## 6. Best Practices
 
 ### One Commit = One Intention
 
@@ -243,7 +243,7 @@ Fix(Server) : 오류 수정
 
 ---
 
-## 8. Rules for AI and Automation
+## 7. Rules for AI and Automation
 
 To ensure machine readability:
 
@@ -267,7 +267,7 @@ Type: Description
 
 ---
 
-## 9. Summary
+## 8. Summary
 
 ### Commit
 
