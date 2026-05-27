@@ -63,7 +63,7 @@ fresh-kitchen-ai-server/
 │   └── train_EfficientNet_V2_M.py      # EfficientNet V2-M 학습 스크립트
 │
 ├── scripts/
-│   ├── data_crawl.py                   # Bing/Google 이미지 크롤링
+│   ├── data_crawl.py                   # DuckDuckGo 이미지 크롤링
 │   ├── data_clean.py                   # MD5 해시 기반 중복 이미지 제거
 │   ├── data_split.py                   # train/val 분리
 │   ├── data_diet.py                    # 클래스별 이미지 수 상한 조정
@@ -677,7 +677,7 @@ python models/food_classifier/test_V2_M.py
 새 클래스 데이터를 구축할 때 아래 순서로 실행합니다.
 
 ```bash
-# 1. 이미지 크롤링 (Bing + Google)
+# 1. 이미지 크롤링 (DuckDuckGo)
 python scripts/data_crawl.py
 
 # 2. MD5 해시 기반 중복 이미지 제거

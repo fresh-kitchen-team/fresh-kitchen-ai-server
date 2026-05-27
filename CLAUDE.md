@@ -59,7 +59,7 @@ python training/train_EfficientNet_V2_M.py
 Run in this order when building a new dataset:
 
 ```bash
-python scripts/data_crawl.py    # Download images via Bing + Google
+python scripts/data_crawl.py    # Download images via DuckDuckGo
 python scripts/data_clean.py    # Remove duplicates
 python scripts/data_split.py    # Create train/val splits
 python scripts/data_diet.py     # Cap dataset size per class
@@ -86,7 +86,7 @@ Food Classifier와 Training 스크립트는 `mps` (Apple Silicon) → `cuda` →
 ```
 dataset/
 ├── train/, val/, test/   # Class-separated folders (70 food classes)
-├── crawldata/            # Raw Bing downloads
+├── crawldata/            # Raw DuckDuckGo downloads
 └── auto_labeled/         # Gemini-labeled images (future training data)
 ```
 

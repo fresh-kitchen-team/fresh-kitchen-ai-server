@@ -2,81 +2,102 @@ import os
 import sys
 import io
 import time
-from icrawler.builtin import GoogleImageCrawler, BingImageCrawler
+import requests
 from PIL import Image
+from duckduckgo_search import DDGS
 
 # 1. 환경 설정
 sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
 
 # 2. 설정 변수
-LIMIT = 200  # 쿼리당 목표 장수 (Google+Bing 각각, 클래스당 최대 ~800장 → data_diet에서 400장으로 정리)
+LIMIT = 200  # 쿼리당 목표 장수 (클래스당 최대 ~800장 → data_diet에서 400장으로 정리)
+MIN_SIZE = 100       # 최소 이미지 크기 (px)
+DOWNLOAD_TIMEOUT = 10
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_ROOT = os.path.join(_BASE_DIR, 'dataset', 'crawldata')
 
 # 3. 클래스별 크롤링 쿼리
 # 키: 클래스 폴더명 / 값: 검색어 목록
 CLASS_QUERIES = {
-    '무': [
-        '무 마트 진열 채소',
-        '흰 무 낱개 신선',
-        '무 냉장 채소 코너',
-        'daikon radish supermarket',
+
+    '맥주': [
+        '캔맥주 냉장고',
+        '캔맥주 마트 진열',
+        'canned beer refrigerator',
+        '하이트 카스 테라 캔 맥주',
+        '병맥주 냉장고',
+        '병맥주 마트 진열',
+        'beer bottle refrigerator',
+        '하이트 카스 테라 병 맥주',
+        '맥주 피쳐',
+        '생맥주 피쳐 테이블',
+        'beer pitcher',
+        'draft beer pitcher',
     ],
 
-    '라면': [
-        '라면 봉지 마트 진열',
-        '신라면 진라면 봉지 제품',
-        '인스턴트 라면 상품 사진',
-        'instant ramen noodles package product',
+    # ── 150장 미만 보강 클래스 ──────────────────────────────────────
+
+    '무': [
+        '무 마트 냉장고',
+        '흰 무 채소 신선',
+        '무 통째로 식재료',
+        'daikon radish fresh',
+    ],
+
+    '라면사리': [
+        '라면사리 봉지 마트',
+        '라면사리 건면 식재료',
+        '인스턴트 라면사리 포장',
+        'ramen noodles package',
     ],
 
     '쌈장': [
-        '쌈장 용기 마트 진열',
-        '쌈장 통 제품 사진',
-        '청정원 재래식 쌈장 상품',
-        'ssamjang korean paste container product',
+        '쌈장 통 마트',
+        '쌈장 용기 냉장고',
+        '재래식 쌈장 식재료',
+        'ssamjang korean paste',
     ],
 
     '식용유': [
-        '식용유 병 마트 진열',
-        '해표 백설 식용유 제품',
-        '식용유 상품 사진',
-        'cooking oil bottle supermarket product',
+        '식용유 병 마트',
+        '식용유 냉장고 보관',
+        '콩기름 포도씨유 식재료',
+        'cooking oil bottle kitchen',
     ],
 
     '배': [
-        '배 과일 마트 진열',
-        '신고배 한국 배 낱개',
-        '배 과일 냉장 신선',
-        'korean pear fruit supermarket',
+        '배 과일 마트',
+        '한국 배 신선 냉장고',
+        '배 과일 낱개',
+        'korean pear fresh fruit',
     ],
 
     '옥수수': [
-        '옥수수 마트 진열 채소',
-        '신선 옥수수 낱개 채소',
-        '옥수수 냉장 채소 코너',
-        'corn cob supermarket fresh vegetable',
+        '옥수수 냉장고',
+        '옥수수 낱개 신선',
+        '찐 옥수수 식재료',
+        'corn cob fresh vegetable',
     ],
 
     '케첩': [
-        '케첩 병 마트 진열',
-        '하인즈 오뚜기 케첩 제품',
-        '토마토케첩 상품 사진',
-        'ketchup bottle product supermarket',
+        '케첩 병 마트',
+        '케첩 냉장고 보관',
+        '토마토 케첩 용기',
+        'ketchup bottle kitchen',
     ],
 
     '고등어': [
-        '고등어 마트 생선 코너',
-        '고등어 냉장 신선 생선',
-        '고등어 낱개 생선 가게',
-        'mackerel fish supermarket fresh',
+        '고등어 마트 생선',
+        '고등어 냉장 신선',
+        '고등어 한 마리 식재료',
+        'mackerel fish fresh',
     ],
 
     '마요네즈': [
-        '마요네즈 병 마트 진열',
-        '오뚜기 마요네즈 제품 사진',
-        '마요네즈 튜브 상품',
-        'mayonnaise jar product supermarket',
+        '마요네즈 병 냉장고',
+        '마요네즈 튜브 마트',
+        '마요네즈 용기 식재료',
+        'mayonnaise jar kitchen',
     ],
 
     '토마토': [
@@ -137,17 +158,36 @@ CLASS_QUERIES = {
 }
 
 
+def download_image(url: str, save_path: str) -> bool:
+    """URL에서 이미지를 다운로드하고 최소 크기를 확인합니다."""
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        resp = requests.get(url, headers=headers, timeout=DOWNLOAD_TIMEOUT)
+        resp.raise_for_status()
+        with open(save_path, 'wb') as f:
+            f.write(resp.content)
+        with Image.open(save_path) as img:
+            w, h = img.size
+            if min(w, h) < MIN_SIZE:
+                os.remove(save_path)
+                return False
+        return True
+    except Exception:
+        if os.path.exists(save_path):
+            os.remove(save_path)
+        return False
+
+
 def convert_to_jpg(folder_path):
     """폴더 내의 모든 이미지를 jpg로 변환하고 원본을 삭제합니다."""
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
-        if filename.lower().endswith(".jpg") or filename.lower().endswith(".jpeg"):
+        if filename.lower().endswith(('.jpg', '.jpeg')):
             continue
         try:
             with Image.open(file_path) as img:
                 rgb_img = img.convert('RGB')
                 new_file_path = os.path.splitext(file_path)[0] + "_conv.jpg"
-                # 변환 파일명 충돌 방지
                 if os.path.exists(new_file_path):
                     new_file_path = os.path.splitext(file_path)[0] + f"_{int(time.time())}.jpg"
                 rgb_img.save(new_file_path, "JPEG")
@@ -167,7 +207,6 @@ def crawl_class(class_name, queries, limit):
     class_dir = os.path.join(OUTPUT_ROOT, class_name)
     os.makedirs(class_dir, exist_ok=True)
 
-    # 현재 저장된 파일 수 기준으로 번호 시작점 결정
     file_counter = count_images(class_dir)
 
     for i, query in enumerate(queries):
@@ -176,30 +215,31 @@ def crawl_class(class_name, queries, limit):
 
         print(f"   🔍 '{query}' ({limit}장 목표)")
 
-        # 1차: Google
         try:
-            google_crawler = GoogleImageCrawler(
-                downloader_threads=2,
-                storage={'root_dir': tmp_dir},
-                log_level=40
-            )
-            google_crawler.crawl(keyword=query, max_num=limit, min_size=(100, 100))
-        except Exception as e:
-            print(f"   ⚠️ Google 에러: {e}")
+            with DDGS() as ddgs:
+                results = list(ddgs.images(keywords=query, max_results=limit))
 
-        # 2차: Bing
-        try:
-            bing_crawler = BingImageCrawler(
-                downloader_threads=2,
-                storage={'root_dir': tmp_dir},
-                log_level=40
-            )
-            bing_crawler.crawl(keyword=query, max_num=limit, min_size=(100, 100))
+            tmp_counter = 0
+            for result in results:
+                url = result.get('image', '')
+                if not url:
+                    continue
+                # 확장자 추출
+                raw = url.split('?')[0].split('/')[-1]
+                ext = '.jpg'
+                if '.' in raw:
+                    candidate = '.' + raw.rsplit('.', 1)[-1].lower()
+                    if candidate in ('.jpg', '.jpeg', '.png', '.webp'):
+                        ext = candidate
+                tmp_counter += 1
+                save_path = os.path.join(tmp_dir, f'{tmp_counter:06d}{ext}')
+                download_image(url, save_path)
+
         except Exception as e:
-            print(f"   ⚠️ Bing 에러: {e}")
+            print(f"   ⚠️ DuckDuckGo 에러: {e}")
 
         # 임시 폴더 → 클래스 폴더로 이동 (파일명 중복 방지)
-        for fname in os.listdir(tmp_dir):
+        for fname in sorted(os.listdir(tmp_dir)):
             src = os.path.join(tmp_dir, fname)
             if not os.path.isfile(src):
                 continue
@@ -208,7 +248,6 @@ def crawl_class(class_name, queries, limit):
             dst = os.path.join(class_dir, f'{file_counter:06d}{ext}')
             os.rename(src, dst)
 
-        # 임시 폴더 삭제
         try:
             os.rmdir(tmp_dir)
         except Exception:
