@@ -270,6 +270,7 @@ fresh-kitchen-ai-server/
 │   └── data_len.py
 │
 ├── docs/
+│   ├── DEVLOG.md                            # 개발 의사결정·문제 해결·모델 진화 기록
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
 │   └── training_log_*.csv                   # 학습 로그
 │

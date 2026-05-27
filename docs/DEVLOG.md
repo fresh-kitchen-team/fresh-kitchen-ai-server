@@ -1,0 +1,253 @@
+# fresh-kitchen-ai-server — DEVLOG
+
+> 개발 과정에서의 의사결정·문제 해결·모델 진화 기록
+
+> 냉장고 식재료 관리 앱 **fresh-kitchen** 의 AI 백엔드 서버 구축 프로젝트.
+> 한 장의 사진으로 **음식 분류 · 영수증 OCR · 냉장고 인벤토리 자동 구축** 을 제공하는 3종 ML 파이프라인을 FastAPI 단일 서버에 통합했습니다.
+
+---
+
+## 프로젝트 개요
+
+| 항목 | 내용 |
+|---|---|
+| **프로젝트명** | fresh-kitchen-ai-server |
+| **기간** | 2026.03 ~ 2026.05 (3개월, 산학협력 프로젝트) |
+| **역할** | AI 백엔드 **단독 개발** (모델 학습 · 데이터 파이프라인 · API 서버) |
+| **팀 구성** | 모바일 앱 (1) · 백엔드 (1) · AI (본인) |
+| **결과물** | 70-class 한국 식재료 분류 모델 (val_acc **96.60%**) + 3개 엔드포인트 운영 서버 |
+
+---
+
+## 핵심 성과
+
+| 지표 | 값 |
+|---|---|
+| **분류 정확도** | val_acc **96.60%** (70 클래스, 한국 식재료) |
+| **클래스 수 확장** | ver2: 35개 → ver5: **70개** (2배) |
+| **모델 진화** | 4회 재학습으로 +2.04%p 누적 개선 |
+| **응답 시간** | EfficientNet 직접 분류 ~150ms / Gemini 폴백 ~2~3s |
+| **자동 데이터 수집** | Gemini 폴백 시 `auto_labeled/` 에 자동 누적 (재학습 데이터 자가 축적) |
+| **운영 안정성** | 토큰 인증 · 매직바이트 이중 검증 · 타임아웃 제어 · 500 오류 비노출 |
+
+---
+
+## 아키텍처
+
+```
+┌─────────────────┐                  ┌──────────────────────────────────────┐
+│  fresh-kitchen  │   HTTPS + Bearer │       fresh-kitchen-ai-server        │
+│   (모바일 앱)    │ ───────────────► │            (FastAPI)                 │
+└─────────────────┘                  │                                      │
+                                     │  ┌────────────────────────────────┐  │
+                                     │  │ POST /food-classification      │──┼─► EfficientNet V2-M
+                                     │  │                                │  │   ↓ confidence < 80%
+                                     │  │                                │  │   Gemini 2.5 Flash (폴백)
+                                     │  ├────────────────────────────────┤  │
+                                     │  │ POST /receipt-ocr              │──┼─► Document AI → Gemini 2.5 Flash
+                                     │  ├────────────────────────────────┤  │
+                                     │  │ POST /fridge-detection         │──┼─► Gemini 2.5 Flash Vision
+                                     │  └────────────────────────────────┘  │
+                                     └──────────────────────────────────────┘
+```
+
+---
+
+## 주요 기술적 의사결정
+
+### 1. 신뢰도 기반 자동 폴백 (Self-improving 시스템)
+
+**문제**: 70개 클래스 분류기는 학습 데이터에 없는 식재료(예: 수박, 망고)에 대해 강제로 잘못된 라벨을 반환함.
+
+**해결**:
+- EfficientNet softmax 최댓값이 **80% 미만**이면 Gemini 2.5 Flash Vision으로 자동 위임
+- Gemini는 클래스 목록을 프롬프트로 받아 **목록에 있으면 해당 클래스명**, 없으면 **자유 한국어 라벨**을 반환
+- 폴백된 이미지는 `dataset/auto_labeled/{label}/` 에 자동 저장 → **다음 학습 라운드의 데이터셋이 자가 누적**되는 self-improving 구조
+
+**효과**: 모델 한계를 외부 LLM으로 즉시 보완 + 학습 데이터 수집 자동화. 운영하면서 데이터가 늘어남.
+
+### 2. Progressive Unfreezing 파인튜닝
+
+**문제**: ImageNet 사전학습 가중치를 처음부터 모두 풀면 catastrophic forgetting 발생.
+
+**해결** (training/train_EfficientNet_V2_M.py):
+1. 전체 freeze → `features[-4:]` 마지막 4개 블록 + 분류기 헤드만 해동
+2. Epoch 5까지 head 위주로 학습 (LR=1e-4)
+3. Epoch 5부터 backbone 전체 해동 + 별도 param_group 으로 LR=1e-5 (10배 작게)
+
+**효과**: 사전학습 표현을 보존하면서 도메인 특화. 같은 데이터에서 head-only 학습 대비 안정적으로 수렴.
+
+### 3. 2단계 OCR — Document AI + Gemini JSON 강제
+
+**문제**: Document AI는 텍스트 추출은 잘하지만 **"구매일 추출"** 과 **"식재료만 골라내기"** 같은 의미 기반 작업을 못함.
+
+**해결**:
+1. **1단계** — Document AI 로 영수증의 `line_item` 엔티티만 정규식 `[^가-힣\s]` 으로 한글 필터링
+2. **2단계** — 추출된 품목 목록과 전체 OCR 텍스트를 Gemini 2.5 Flash 에 전달, `response_mime_type="application/json"` 로 **JSON 강제** 응답 받음
+3. Gemini가 `purchasedAt` (YYYY-MM-DD) 와 식재료만 필터된 `ingredients[]` 를 반환
+4. 정규식으로 날짜 형식 재검증 → 신뢰성 확보
+
+**효과**: 브랜드명 자동 제거 (`"CJ 비비고 만두"` → `"만두"`), 카드명·환불·할인·합계 등 비식재료 완전 제외.
+
+### 4. 외부 API 타임아웃 제어
+
+**문제**: Gemini API는 가끔 응답이 60초 이상 지연되어 서버 hang을 유발.
+
+**해결**: 각 모듈에서 모듈 수준 싱글톤 `ThreadPoolExecutor(max_workers=1)` 를 두고, `future.result(timeout=GEMINI_TIMEOUT)` 로 강제 타임아웃 → 실패 시 빈 결과 반환 (재시도 없음, 사용자 대기시간 최소화).
+
+### 5. 하드웨어 자동 감지
+
+```python
+device = torch.device(
+    "mps" if torch.backends.mps.is_available() else
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
+```
+
+Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precision(AMP) 은 CUDA 에서만 활성화 (MPS는 GradScaler 불안정).
+
+### 6. 보안 설계
+
+| 항목 | 구현 |
+|---|---|
+| 인증 | HTTP Bearer 토큰 + `hmac.compare_digest()` (타이밍 공격 방어) |
+| 파일 검증 | Content-Type 헤더 + **실제 파일 magic bytes** 이중 검증 (헤더 위조 방어) |
+| 토큰 누락 | 서버 시작 자체를 거부 (`RuntimeError`) |
+| 임시 파일 | `tempfile.NamedTemporaryFile` + `finally` 블록 `os.unlink()` 즉시 삭제 |
+| 500 응답 | 클라이언트에는 고정 메시지만, 스택 트레이스는 `server.log` 에만 |
+
+---
+
+## 모델 진화 과정
+
+같은 EfficientNet V2-M 백본으로 데이터·하이퍼파라미터를 점진 개선하며 4회 재학습.
+
+| 버전 | 클래스 수 | 데이터셋 | 최대 Epoch | Patience | 최고 val_acc | 주요 변경 |
+|---|---|---|---|---|---|---|
+| **ver2** | 35 (영문) | Train 7,315 / Val 1,803 | 30 | - | 94.56% | 초기 베이스라인 |
+| **ver3** | 60 (영문) | Train 11,050 / Val 2,731 | 30 | - | 94.73% | 클래스 +25 확장 |
+| **ver4** | 70 (한글) | Train 12,714 / Val 3,147 | 30 | 5 | 95.42% | 한글 클래스명 전환 + Progressive Unfreezing 도입 |
+| **ver5** ⭐ | 70 (한글) | Train 12,714 / Val 3,147 | **50** | **8** | **96.60%** | Early Stopping patience 완화 |
+
+### ver4 → ver5 의 결정적 차이
+
+**ver4의 문제**: 학습 로그(`docs/training_log_5_27.csv`) 분석 결과, backbone 전체 해동(epoch 5)이 일어난 직후 epoch 7에 최고점 달성 → patience=5 로 epoch 12에 조기 종료. **backbone이 실질적으로 6 에폭만 학습됨.**
+
+**ver5의 해결**: `EPOCHS=50, PATIENCE=8` 로 완화하여 backbone 충분한 학습 시간 확보. ReduceLROnPlateau가 LR을 자동 반감(1e-5 → 5e-6 → ... → 6.25e-7)하며 epoch 29에 최고점 달성 → epoch 37에 조기 종료.
+
+### ver5 클래스별 정확도 개선 (vs ver4)
+
+**크게 향상된 클래스** (시각적 다양성이 큰 클래스):
+
+| 클래스 | ver4 | ver5 | 변화 |
+|---|---|---|---|
+| 베이컨 | 69.2% | 88.5% | **+19.3%p** |
+| 버터 | 84.8% | 95.7% | +10.9%p |
+| 무 | 90.0% | 100.0% | +10.0%p |
+| 치즈 | 61.0% | 70.7% | +9.7%p |
+| 소금 | 90.2% | 97.6% | +7.4%p |
+
+**100% 완벽 분류 클래스 수**: ver4 19개 → ver5 **24개** (+5)
+
+---
+
+## 마주친 문제와 해결
+
+### 1. Gemini 2.5 Flash 응답 포맷 변경 대응
+
+Gemini 2.5 가 단일 객체를 종종 `[{...}]` 배열로 감싸 반환하면서 운영 중 `'list' object has no attribute 'get'` 에러 발생.
+
+```python
+result = json.loads(response.text)
+if isinstance(result, list):
+    result = result[0] if result else {}
+if not isinstance(result, dict):
+    return {"error": "Gemini 응답 형식 오류"}
+```
+
+→ 방어 로직 추가로 외부 API 변경에도 안정 동작.
+
+### 2. 냉장고 감지 빈 배열 응답 (타임아웃)
+
+이미지 해상도를 1024 → 2048px 로 올리니 Gemini 응답 시간 증가 → 30초 타임아웃 빈발.
+
+**해결**: `GEMINI_TIMEOUT` 기본값을 30 → **60초**로 상향 + `.env` 오버라이드 가능하게 설계.
+
+### 3. 신뢰도 임계값 trade-off
+
+70 클래스로 늘어나면서 softmax 최댓값이 자연 감소 → 임계값 80에 잦은 폴백 발생.
+임계값 70 으로 낮춰봤으나 **77% 로 잘못 분류하는 케이스** 확인 → 다시 80으로 복원.
+
+**교훈**: 임계값 하향보다 **모델 자체 개선(ver5)이 정공법**. 클래스 수 증가 시 백본 학습량 확보가 필수.
+
+### 4. 냉장고 감지 프롬프트 — 포괄적 식품명 출력
+
+초기 프롬프트는 `"즉석식품"`, `"음식"` 같은 추상 카테고리를 식재료로 반환.
+
+**해결**: 프롬프트에 명시적 제외 규칙 추가.
+> "즉석식품", "음식", "채소", "소스", "식품" 처럼 포괄적인 단어는 쓰지 말고, 정확히 식별 안 되면 해당 항목을 제외해줘.
+
+### 5. 동의어 중복 — "계란" vs "달걀", "콜라" vs "탄산음료"
+
+같은 식재료를 두 가지 이름으로 반환하는 문제 → 프롬프트에 통합 규칙 추가.
+> 같은 식재료는 중복 없이 하나만 써줘 (예: "계란"과 "달걀"은 "계란" 하나로).
+
+---
+
+## 데이터 파이프라인
+
+새 클래스 추가 시 5단계 자동 파이프라인:
+
+1. **`data_crawl.py`** — DuckDuckGo (`ddgs` 패키지) 로 클래스별 이미지 자동 다운로드
+2. **`data_clean.py`** — MD5 해시로 중복 제거 (split 간 누수 차단)
+3. **`data_split.py`** — train → val 분리 (실행 시 val 초기화로 멱등성 보장)
+4. **`data_diet.py`** — 클래스별 이미지 수 상한 (train ≤ 400, val ≤ 80) — 불균형 완화
+5. **`data_len.py`** — 클래스별 통계 출력
+
+학습 시점에는 추가로 `remove_corrupted_images()` 가 PIL로 모든 이미지를 로드해 손상 파일 자동 제거 + `WeightedRandomSampler` 로 클래스 불균형 보정.
+
+---
+
+## 회고 및 배운 점
+
+### 잘한 점
+
+- **외부 LLM을 분류기 보조로 사용** 하는 self-improving 구조 설계 — 모델의 한계를 운영으로 자가 보완.
+- **학습 로그 기반 의사결정** — ver4가 "최고점이 epoch 7" 인 걸 보고 backbone 학습량 부족 진단 → ver5 patience 완화로 +1.18%p 개선.
+- **외부 API 변경 대응 패턴** — Gemini 응답 포맷 변경에도 isinstance 가드로 안전.
+
+### 아쉬운 점 / 개선 여지
+
+- **치즈 70.7%** — 여전히 전체 최하위. 시각적 다양성(슬라이스/크림/모짜렐라 등) 때문. 별도 sub-class 분리 또는 hard mining 필요.
+- **돼지고기·오징어 회귀** — ver5에서 일부 클래스가 ver4 대비 -10%p 가까이 떨어짐. 시각적 유사 클래스(소고기·새우)와의 confusion 분석 후 hard negative 보강 필요.
+- **MPS 환경 AMP 미지원** — Apple Silicon 에서는 학습 속도가 제한적. CUDA 인스턴스로 학습 분리 운영 중.
+
+### 배운 점
+
+- **Early Stopping patience 는 모델 복잡도·클래스 수에 비례** 해야 한다. ver4에서 patience=5 는 35→70 클래스 확장 후 너무 짧았음.
+- **80% 신뢰도 임계값은 70 클래스 분류기의 "노이즈 영역" 경계** 였음. 그 미만은 차라리 외부 LLM에 위임하는 게 정확도·UX 모두에 유리.
+- **외부 LLM은 결정적이지 않다** — JSON 강제(`response_mime_type`), 타임아웃, isinstance 가드, 정규식 재검증 같은 다중 안전장치 필수.
+- **`hmac.compare_digest`, magic bytes 검증** 같은 보안 기본기를 직접 구현하면서 "왜 이런 게 필요한지" 체득.
+
+---
+
+## 기술 스택
+
+| 분류 | 사용 기술 |
+|---|---|
+| **언어** | Python 3.10.19 |
+| **웹 프레임워크** | FastAPI 0.136, uvicorn 0.46 |
+| **딥러닝** | PyTorch 2.11, torchvision 0.26 |
+| **모델** | EfficientNet V2-M (timm/torchvision) |
+| **외부 API** | Google Cloud Document AI, Google Gemini 2.5 Flash (`google-genai`) |
+| **이미지** | Pillow 12.2 |
+| **데이터 수집** | ddgs (DuckDuckGo 크롤러) |
+| **기타** | python-dotenv, hmac, tempfile, concurrent.futures |
+
+---
+
+## 링크
+
+- **레포지토리**: https://github.com/fresh-kitchen-team/fresh-kitchen-ai-server
+- **상세 개발 계획서**: `docs/상세개발계획서 AI담당.xlsx`
+- **학습 로그 데이터**: `docs/training_log_*.csv` (ver2~ver5 전체 보존)
