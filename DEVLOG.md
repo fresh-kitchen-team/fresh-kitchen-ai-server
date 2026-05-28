@@ -126,7 +126,17 @@ device = torch.device(
 
 Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precision(AMP) 은 CUDA 에서만 활성화 (MPS는 GradScaler 불안정).
 
-### 8. 보안 설계
+### 8. 학습 환경 분리 — MacBook(MPS) → Windows(CUDA)
+
+**문제**: 개발은 MacBook(Apple Silicon, MPS) 에서 진행했으나, 막상 학습을 돌려보니 두 가지 한계가 걸림.
+- 480×480 입력 + EfficientNet V2-M + 배치 16 조합에서 **RAM 부족으로 swap thrashing** 발생 → 학습이 사실상 멈춤
+- MPS 는 AMP(Mixed Precision) 미지원 → 1 epoch 당 수십 분, 50 epoch 학습이 현실적으로 불가능
+
+**해결**: 학습 단계만 **집의 Windows 데스크탑(NVIDIA GPU)** 으로 분리. `#7` 의 자동 감지 로직 덕분에 동일 코드를 그대로 실행 → CUDA 환경에서 AMP 자동 활성화. 학습 산출물(`.pth`, `training_log_*.csv`) 만 운영 서버로 옮겨 반영.
+
+**효과**: ver4·ver5 학습이 각각 수 시간 내 완료. **개발(Mac/MPS) ↔ 학습(Windows/CUDA) ↔ 운영(서버)** 3-tier 분리가 자연스럽게 정착.
+
+### 9. 보안 설계
 
 | 항목 | 구현 |
 |---|---|
@@ -240,7 +250,7 @@ if not isinstance(result, dict):
 
 - **치즈 70.7%** — 여전히 전체 최하위. 시각적 다양성(슬라이스/크림/모짜렐라 등) 때문. 별도 sub-class 분리 또는 hard mining 필요.
 - **돼지고기·오징어 회귀** — ver5에서 일부 클래스가 ver4 대비 -10%p 가까이 떨어짐. 시각적 유사 클래스(소고기·새우)와의 confusion 분석 후 hard negative 보강 필요.
-- **MPS 환경 AMP 미지원** — Apple Silicon 에서는 학습 속도가 제한적. CUDA 인스턴스로 학습 분리 운영 중.
+- **학습 인프라 외부 의존** — 학습은 Windows 데스크탑(CUDA) 으로 분리해 해결했으나, 팀 차원의 공용 학습 환경이 없어 재현·인수인계 시 마찰. 클라우드 GPU(Colab Pro·Lambda 등) 표준화가 다음 과제.
 
 ### 배운 점
 
