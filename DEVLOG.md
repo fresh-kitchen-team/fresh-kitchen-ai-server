@@ -161,7 +161,7 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 
 ### ver4 → ver5 의 결정적 차이
 
-**ver4의 문제**: 학습 로그(`docs/training_log_5_27.csv`) 분석 결과, backbone 전체 해동(epoch 5)이 일어난 직후 epoch 7에 최고점 달성 → patience=5 로 epoch 12에 조기 종료. **backbone이 실질적으로 6 에폭만 학습됨.**
+**ver4의 문제**: 학습 로그(`docs/training_log_5_27.csv`) 분석 결과, backbone 전체 해동이 epoch 6에 일어났고 epoch 7에 바로 최고점(95.42%) 달성 → **저장된 best 모델 기준 backbone은 단 2 에폭(epoch 6·7)만 학습된 상태.** 이후 patience=5 소진으로 epoch 12에 조기 종료되지만, 저장된 가중치는 epoch 7 것이라 backbone이 충분히 수렴하지 못함.
 
 **ver5의 해결**: `EPOCHS=50, PATIENCE=8` 로 완화하여 backbone 충분한 학습 시간 확보. ReduceLROnPlateau가 LR을 자동 반감(1e-5 → 5e-6 → ... → 6.25e-7)하며 epoch 29에 최고점 달성 → epoch 37에 조기 종료.
 
