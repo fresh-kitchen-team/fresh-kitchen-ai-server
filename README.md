@@ -202,6 +202,23 @@ python training/train_EfficientNet_V2_M.py
 | Early Stopping | val_acc 기준 patience=8 |
 | Mixed Precision (AMP) | CUDA에서만 활성화 |
 
+### 학습 데이터 증강
+
+스마트폰 촬영 환경(흐림·역광·기울어짐)을 시뮬레이션하는 증강이 적용되어 있습니다.
+
+| 증강 | 시뮬레이션 대상 |
+|---|---|
+| `RandomPerspective` | 비스듬한 촬영 각도 |
+| `GaussianBlur` | 초점 흐림 |
+| `ColorJitter` | 조명·채도 변화 |
+| `RandomRotation(30°)` | 회전된 사진 |
+
+### 새 클래스 추가 시 주의사항
+
+1. [데이터 파이프라인](#데이터-파이프라인) 5단계 실행
+2. **`models/food_classifier/predict_V2_M.py` 의 `CLASS_CATEGORY` dict에 새 클래스 → 카테고리 매핑 추가** (누락 시 자동으로 `ETC` 처리되며 경고 로그 출력)
+3. 학습 스크립트 재실행 후 `.pth` 교체
+
 ### 평가
 
 ```bash
