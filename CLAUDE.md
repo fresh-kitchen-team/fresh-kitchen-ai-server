@@ -19,7 +19,8 @@ pip install -r requirements.txt
 
 # API keys (required for OCR and Gemini fallback)
 cp .env.example .env
-# Fill in: GOOGLE_APPLICATION_CREDENTIALS, PROJECT_ID, PROCESSOR_ID, LOCATION, GEMINI_API_KEY
+# Fill in: GOOGLE_APPLICATION_CREDENTIALS, PROJECT_ID, PROCESSOR_ID, LOCATION, GEMINI_API_KEY, AI_SECRET_TOKEN
+# (AI_SECRET_TOKEN is mandatory — the server refuses to start if it is missing)
 
 # Model weights (not in git — obtain from team drive)
 # Place best_food_model_v2_m_ver5.pth in the project root
@@ -37,18 +38,22 @@ python3 -m uvicorn main:app --reload --port 8000
 
 ## Running the Models
 
+The `models/` modules use absolute imports (`from models.category import ...`), so they
+must be launched as modules with `python -m` from the project root — running them as a
+file path (`python models/.../predict_V2_M.py`) fails with `ModuleNotFoundError: No module named 'models'`.
+
 ```bash
 # 음식 이미지 분류
-python models/food_classifier/predict_V2_M.py
+python -m models.food_classifier.predict_V2_M
 
 # 영수증 OCR
-python models/receipt_ocr/receipt_ocr.py
+python -m models.receipt_ocr.receipt_ocr
 
 # 냉장고 식재료 감지
-python models/fridge_detection/fridge_detection.py
+python -m models.fridge_detection.fridge_detection
 
 # 분류 모델 정확도 평가
-python models/food_classifier/test_V2_M.py
+python -m models.food_classifier.test_V2_M
 
 # 분류 모델 학습 (최대 50 epoch, early stopping patience=8)
 python training/train_EfficientNet_V2_M.py
@@ -96,6 +101,8 @@ Training uses `WeightedRandomSampler` to handle class imbalance.
 
 | File | Purpose |
 |------|---------|
+| `main.py` | FastAPI entrypoint — 3 endpoints, Bearer auth, image validation |
+| `models/category.py` | Category enum + `normalize_category()` (Gemini 응답을 안전하게 보정) |
 | `models/food_classifier/predict_V2_M.py` | Main classifier with Gemini fallback |
 | `models/food_classifier/test_V2_M.py` | Per-class accuracy evaluation |
 | `models/receipt_ocr/receipt_ocr.py` | Document AI + Gemini OCR pipeline |

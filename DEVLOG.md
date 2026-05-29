@@ -71,8 +71,8 @@
 2. **1차 — backbone 전체 freeze, head 만 학습**: 안정적이지만 한국 식재료 도메인 특화가 약함.
 3. **2차 — `features[-4:]` 마지막 4개 블록 + head 해동**: 표현력은 향상됐으나 catastrophic forgetting 우려.
 4. **현재 — Progressive Unfreezing** (`training/train_EfficientNet_V2_M.py`):
-   - Epoch 5 까지 head 위주로 학습 (LR=1e-4)
-   - Epoch 5 부터 backbone 전체 해동 + 별도 param_group 으로 LR=1e-5 (10배 작게)
+   - Epoch 5 까지: head + backbone 상위 4개 블록(`features[-4:]`)만 학습 (LR=1e-4)
+   - Epoch 5 부터: backbone 전체 해동 + 새로 풀린 하위 레이어는 별도 param_group 으로 LR=1e-5 (10배 작게)
 
 **효과**: 사전학습 표현을 보존하면서 도메인 특화. 같은 데이터에서 head-only 학습 대비 안정적으로 수렴.
 

@@ -121,6 +121,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 
 | 상태 코드 | 상황 |
 |---|---|
+| `400` | 입력 처리 실패 (예: 음식 분류 모델 미로드·이미지 디코딩 실패) |
 | `401` | 토큰 없음·불일치 |
 | `413` | 파일 10MB 초과 |
 | `415` | 허용되지 않는 형식 |
@@ -222,10 +223,20 @@ python training/train_EfficientNet_V2_M.py
 ### 평가
 
 ```bash
-python models/food_classifier/test_V2_M.py
+python -m models.food_classifier.test_V2_M
 ```
 
 `dataset/test/` 기준 전체 정확도와 클래스별 정확도 출력. 학습 로그는 `docs/logs/training_log_*.csv` 에 저장됩니다.
+
+> **단독 실행 시 주의** — `models/` 하위 모듈(`predict_V2_M`·`receipt_ocr`·`fridge_detection`·`test_V2_M`)은
+> 절대 import(`from models.category import ...`)를 사용하므로 **프로젝트 루트에서 `python -m` 모듈 형태**로 실행해야 합니다.
+> 파일 경로(`python models/.../predict_V2_M.py`)로 실행하면 `ModuleNotFoundError: No module named 'models'` 가 발생합니다.
+>
+> ```bash
+> python -m models.food_classifier.predict_V2_M   # 음식 분류 단독 테스트
+> python -m models.receipt_ocr.receipt_ocr        # 영수증 OCR 단독 테스트
+> python -m models.fridge_detection.fridge_detection  # 냉장고 감지 단독 테스트
+> ```
 
 ---
 
