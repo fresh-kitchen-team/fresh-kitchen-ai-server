@@ -1,17 +1,13 @@
 import os
-import io
 import json
 import logging
+import mimetypes
 import concurrent.futures
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from PIL import Image
 from models.category import normalize_category
-
-MAX_IMAGE_PX = 2048
-JPEG_QUALITY = 85
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
@@ -25,19 +21,6 @@ _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else Non
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 
-def _resize_image(image_path: str) -> tuple[bytes, str]:
-    """이미지를 MAX_IMAGE_PX 이하로 리사이즈하고 JPEG bytes로 반환"""
-    with Image.open(image_path) as img:
-        img = img.convert("RGB")
-        w, h = img.size
-        if max(w, h) > MAX_IMAGE_PX:
-            scale = MAX_IMAGE_PX / max(w, h)
-            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=JPEG_QUALITY)
-        return buf.getvalue(), "image/jpeg"
-
-
 def detect_fridge_items(image_path: str) -> list:
     """냉장고 사진에서 Gemini Vision으로 식재료 목록 추출"""
     if not _gemini_client:
@@ -45,7 +28,9 @@ def detect_fridge_items(image_path: str) -> list:
         return []
 
     try:
-        image_bytes, mime_type = _resize_image(image_path)
+        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
 
         prompt = """
 너는 냉장고 속 식재료를 파악하는 전문가야.

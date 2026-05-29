@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torchvision import transforms, models
 from PIL import Image
-import io
+import mimetypes
 import os
 import shutil
 import json
@@ -14,8 +14,6 @@ from google import genai
 from google.genai import types
 from models.category import normalize_category
 
-MAX_IMAGE_PX = 2048
-JPEG_QUALITY  = 85
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_BASE_DIR, '.env'))
@@ -150,26 +148,15 @@ def load_food_model(model_path: str):
 # --------------------------------------
 # 2. Gemini Vision 예측 함수
 # --------------------------------------
-def _resize_image(image_path: str) -> tuple[bytes, str]:
-    """이미지를 MAX_IMAGE_PX 이하로 리사이즈하고 JPEG bytes로 반환"""
-    with Image.open(image_path) as img:
-        img = img.convert("RGB")
-        w, h = img.size
-        if max(w, h) > MAX_IMAGE_PX:
-            scale = MAX_IMAGE_PX / max(w, h)
-            img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=JPEG_QUALITY)
-        return buf.getvalue(), "image/jpeg"
-
-
 def gemini_predict(image_path: str, class_names: list) -> dict:
     """EfficientNet이 확신 못할 때 Gemini Vision이 대신 판단"""
     if not _gemini_client:
         return {"error": "GEMINI_API_KEY가 .env에 없습니다."}
 
     try:
-        image_bytes, mime_type = _resize_image(image_path)
+        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
 
         class_list_str = "\n".join(f"- {c}" for c in class_names)
         prompt = f"""
