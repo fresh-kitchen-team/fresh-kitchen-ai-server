@@ -23,8 +23,8 @@ LABEL_SMOOTHING = 0.1
 GRAD_CLIP_NORM = 1.0
 UNFREEZE_EPOCH = 5  # 이 에폭 이후 전체 레이어 해동
 SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver5.pth')
-LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_5_28.csv')
-CLASS_ACC_LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'training_log_class_acc_5_28.csv')
+LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'logs', 'training_log_5_28.csv')
+CLASS_ACC_LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'logs', 'training_log_class_acc_5_28.csv')
 NUM_WORKERS = 4
 
 def remove_corrupted_images(directory):

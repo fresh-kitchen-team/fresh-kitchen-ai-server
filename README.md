@@ -69,7 +69,7 @@ TOKEN=$(grep AI_SECRET_TOKEN .env | cut -d= -f2)
 
 curl -X POST http://127.0.0.1:8000/internal/v1/food-classification \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@samples/predict/beef1.jpeg"
+  -F "file=@samples/food/beef1.jpeg"
 ```
 
 ---
@@ -225,7 +225,7 @@ python training/train_EfficientNet_V2_M.py
 python models/food_classifier/test_V2_M.py
 ```
 
-`dataset/test/` 기준 전체 정확도와 클래스별 정확도 출력. 학습 로그는 `docs/training_log_*.csv` 에 저장됩니다.
+`dataset/test/` 기준 전체 정확도와 클래스별 정확도 출력. 학습 로그는 `docs/logs/training_log_*.csv` 에 저장됩니다.
 
 ---
 
@@ -274,7 +274,7 @@ fresh-kitchen-ai-server/
 │   │   └── test_V2_M.py                     # 정확도 평가
 │   ├── receipt_ocr/
 │   │   └── receipt_ocr.py                   # Document AI + Gemini OCR
-│   └── object_detection/
+│   └── fridge_detection/
 │       └── fridge_detection.py              # Gemini Vision 냉장고 감지
 │
 ├── training/
@@ -289,11 +289,13 @@ fresh-kitchen-ai-server/
 │
 ├── docs/
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
-│   └── training_log_*.csv                   # 학습 로그
+│   └── logs/                               # 학습 로그 (training_log_*.csv)
 │
 ├── credentials/                            # GCP 서비스 계정 키 (git 제외)
 ├── samples/                                # 로컬 단독 실행 테스트 이미지 (git 제외)
-├── dataset/                                 # 학습 데이터 (git 제외)
+│   ├── food/                               # 식재료 분류 테스트 이미지
+│   └── fridge/                             # 냉장고 감지 테스트 이미지
+├── dataset/                                # 학습 데이터 (git 제외)
 └── server.log                               # uvicorn 런타임 로그 (git 제외)
 ```
 

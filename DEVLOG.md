@@ -132,7 +132,7 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 - 480×480 입력 + EfficientNet V2-M + 배치 16 조합에서 **RAM 부족으로 swap thrashing** 발생 → 학습이 사실상 멈춤
 - MPS 는 AMP(Mixed Precision) 미지원 → 1 epoch 당 수십 분, 50 epoch 학습이 현실적으로 불가능
 
-**해결**: 학습 단계만 **집의 Windows 데스크탑(NVIDIA GPU)** 으로 분리. `#7` 의 자동 감지 로직 덕분에 동일 코드를 그대로 실행 → CUDA 환경에서 AMP 자동 활성화. 학습 산출물(`.pth`, `training_log_*.csv`) 만 운영 서버로 옮겨 반영.
+**해결**: 학습 단계만 **집의 Windows 데스크탑(NVIDIA GPU)** 으로 분리. `#7` 의 자동 감지 로직 덕분에 동일 코드를 그대로 실행 → CUDA 환경에서 AMP 자동 활성화. 학습 산출물(`.pth`, `docs/logs/training_log_*.csv`) 만 운영 서버로 옮겨 반영.
 
 **효과**: ver4·ver5 학습이 각각 수 시간 내 완료. **개발(Mac/MPS) ↔ 학습(Windows/CUDA) ↔ 운영(서버)** 3-tier 분리가 자연스럽게 정착.
 
@@ -161,7 +161,7 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 
 ### ver4 → ver5 의 결정적 차이
 
-**ver4의 문제**: 학습 로그(`docs/training_log_5_27.csv`) 분석 결과, backbone 전체 해동이 epoch 6에 일어났고 epoch 7에 바로 최고점(95.42%) 달성 → **저장된 best 모델 기준 backbone은 단 2 에폭(epoch 6·7)만 학습된 상태.** 이후 patience=5 소진으로 epoch 12에 조기 종료되지만, 저장된 가중치는 epoch 7 것이라 backbone이 충분히 수렴하지 못함.
+**ver4의 문제**: 학습 로그(`docs/logs/training_log_5_27.csv`) 분석 결과, backbone 전체 해동이 epoch 6에 일어났고 epoch 7에 바로 최고점(95.42%) 달성 → **저장된 best 모델 기준 backbone은 단 2 에폭(epoch 6·7)만 학습된 상태.** 이후 patience=5 소진으로 epoch 12에 조기 종료되지만, 저장된 가중치는 epoch 7 것이라 backbone이 충분히 수렴하지 못함.
 
 **ver5의 해결**: `EPOCHS=50, PATIENCE=8` 로 완화하여 backbone 충분한 학습 시간 확보. ReduceLROnPlateau가 LR을 자동 반감(1e-5 → 5e-6 → ... → 6.25e-7)하며 epoch 29에 최고점 달성 → epoch 37에 조기 종료.
 
@@ -298,4 +298,4 @@ if not isinstance(result, dict):
 
 - **레포지토리**: https://github.com/fresh-kitchen-team/fresh-kitchen-ai-server
 - **상세 개발 계획서**: `docs/상세개발계획서 AI담당.xlsx`
-- **학습 로그 데이터**: `docs/training_log_*.csv` (ver2~ver5 전체 보존)
+- **학습 로그 데이터**: `docs/logs/training_log_*.csv` (ver2~ver5 전체 보존)

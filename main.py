@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 from models.food_classifier.predict_V2_M import load_food_model, predict_image
 from models.receipt_ocr.receipt_ocr import process_receipt_raw, filter_with_gemini
-from models.object_detection.fridge_detection import detect_fridge_items
+from models.fridge_detection.fridge_detection import detect_fridge_items
 
 logging.basicConfig(
     level=logging.INFO,
