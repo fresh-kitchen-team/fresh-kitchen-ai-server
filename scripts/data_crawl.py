@@ -19,24 +19,6 @@ OUTPUT_ROOT = os.path.join(_BASE_DIR, 'dataset', 'crawldata')
 # 3. 클래스별 크롤링 쿼리
 # 키: 클래스 폴더명 / 값: 검색어 목록
 CLASS_QUERIES = {
-
-    '맥주': [
-        '캔맥주 냉장고',
-        '캔맥주 마트 진열',
-        'canned beer refrigerator',
-        '하이트 카스 테라 캔 맥주',
-        '병맥주 냉장고',
-        '병맥주 마트 진열',
-        'beer bottle refrigerator',
-        '하이트 카스 테라 병 맥주',
-        '맥주 피쳐',
-        '생맥주 피쳐 테이블',
-        'beer pitcher',
-        'draft beer pitcher',
-    ],
-
-    # ── 150장 미만 보강 클래스 ──────────────────────────────────────
-
     '무': [
         '무 마트 냉장고',
         '흰 무 채소 신선',
@@ -217,7 +199,7 @@ def crawl_class(class_name, queries, limit):
 
         try:
             with DDGS() as ddgs:
-                results = list(ddgs.images(keywords=query, max_results=limit))
+                results = list(ddgs.images(query, max_results=limit))
 
             tmp_counter = 0
             for result in results:
