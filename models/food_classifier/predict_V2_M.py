@@ -212,7 +212,9 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
 def save_to_dataset(image_path: str, class_name: str):
     """Gemini가 분류한 이미지를 auto_labeled에 자동 저장"""
     try:
-        save_folder = os.path.join(SAVE_DIR, class_name)
+        # LLM이 반환한 라벨을 폴더명으로 쓰므로 경로 구분자·상위참조 제거 (SAVE_DIR 밖 쓰기 방지)
+        safe_name = (class_name or "unknown").strip().replace("/", "_").replace("\\", "_").replace("..", "_") or "unknown"
+        save_folder = os.path.join(SAVE_DIR, safe_name)
         os.makedirs(save_folder, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
