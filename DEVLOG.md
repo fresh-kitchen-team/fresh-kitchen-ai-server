@@ -102,14 +102,14 @@
 
 **문제**: 70개 클래스 분류기는 학습 데이터에 없는 식재료(예: 수박, 망고)에 대해 강제로 잘못된 라벨을 반환함.
 
-> **계기는 4/24 자문의 "그냥 VLM 쓰는 건 어때?" 한마디.** 자문은 VLM 활용을 가볍게 제안한 정도였고, 거기서 한 발 더 나아가 ① 분류 → ② 저신뢰 시 VLM 위임 → ③ VLM 라벨 자동 축적 → ④ 다음 학습에 반영하는 **self-improving 4단계 구조는 직접 설계**했음.
+> **계기는 4/24 자문의 "그냥 VLM 쓰는 건 어때?" 한마디.** 자문은 VLM 활용을 제안한 정도였고, 이를 ① 분류 → ② 저신뢰 시 VLM 위임 → ③ VLM 라벨 자동 축적 → ④ 다음 학습에 반영하는 **self-improving 4단계 구조로 구체화한 것은 직접 설계**.
 
 **해결**:
 - EfficientNet softmax 최댓값이 **80% 미만**이면 Gemini 2.5 Flash Vision으로 자동 위임
 - Gemini는 클래스 목록을 프롬프트로 받아 **목록에 있으면 해당 클래스명**, 없으면 **자유 한국어 라벨**을 반환
-- 폴백된 이미지는 `dataset/auto_labeled/{label}/` 에 자동 저장 → **다음 학습 라운드의 데이터셋이 자가 누적**되는 self-improving 구조
+- 폴백된 이미지는 `dataset/auto_labeled/{label}/` 에 자동 저장 → **다음 학습 라운드의 데이터셋이 자가 누적**되는 self-improving 구조 (실제 재학습 반영은 향후 과제)
 
-**효과**: 모델 한계를 외부 LLM으로 즉시 보완 + 학습 데이터 수집 자동화. 운영하면서 데이터가 늘어남.
+**효과**: 모델 한계를 외부 LLM으로 즉시 보완 + 학습 데이터가 운영 중 자동 축적되는 구조 확보.
 
 ### 4. 2단계 OCR — Document AI + Gemini JSON 강제
 
@@ -195,9 +195,11 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 
 ### ver4 → ver5 의 결정적 차이
 
-**ver4의 문제**: 학습 로그(`docs/logs/training_log_5_27.csv`) 분석 결과, backbone 전체 해동이 epoch 6에 일어났고 epoch 7에 바로 최고점(95.42%) 달성 → **저장된 best 모델 기준 backbone은 단 2 에폭(epoch 6·7)만 학습된 상태.** 이후 patience=5 소진으로 epoch 12에 조기 종료되지만, 저장된 가중치는 epoch 7 것이라 backbone이 충분히 수렴하지 못함.
+**결정 과정**: ver4는 `EPOCHS`·`PATIENCE` 기준을 명확히 세우지 못한 채 직관으로 설정. 학습 종료 후 95.42% 라는 수치에도 backbone이 덜 수렴한 듯한 찜찜함이 남아 `EPOCHS=50, PATIENCE=8` 로 완화해 재학습 → 96.60% 개선. 결과가 좋아진 **뒤** 학습 로그를 뜯어 원인을 규명한 사후 검증 케이스.
 
-**ver5의 해결**: `EPOCHS=50, PATIENCE=8` 로 완화하여 backbone 충분한 학습 시간 확보. ReduceLROnPlateau가 LR을 자동 반감(1e-5 → 5e-6 → ... → 6.25e-7)하며 epoch 29에 최고점 달성 → epoch 37에 조기 종료.
+**로그로 확인한 원인** (`docs/logs/training_log_5_27.csv`): ver4 는 backbone 전체 해동이 epoch 6 에 일어났고 epoch 7 에 바로 최고점(95.42%) 달성 → **저장된 best 모델 기준 backbone은 단 2 에폭(epoch 6·7)만 학습된 상태.** patience=5 소진으로 epoch 12 에 조기 종료되지만, 저장된 가중치는 epoch 7 것이라 backbone이 충분히 수렴하지 못한 게 찜찜함의 정체.
+
+**ver5의 결과**: `PATIENCE=8` 완화로 backbone 학습 시간 확보. ReduceLROnPlateau가 LR을 자동 반감(1e-5 → 5e-6 → ... → 6.25e-7)하며 epoch 29 최고점 → epoch 37 조기 종료. 직관에서 출발한 재학습이 적중했고, **로그 분석으로 그 이유를 규명해 교훈으로 일반화**.
 
 ### ver5 클래스별 정확도 개선 (vs ver4)
 
@@ -234,7 +236,7 @@ if not isinstance(result, dict):
 ### 2. 신뢰도 임계값 trade-off
 
 70 클래스로 늘어나면서 softmax 최댓값이 자연 감소 → 임계값 80에 잦은 폴백 발생.
-임계값 70 으로 낮춰봤으나 **77% 로 잘못 분류하는 케이스** 확인 → 다시 80으로 복원.
+임계값 70 으로 낮춰봤으나 **신뢰도 77% 짜리 오분류가 그대로 통과되는 케이스** 확인 → 다시 80으로 복원.
 
 **교훈**: 임계값 하향보다 **모델 자체 개선(ver5)이 정공법**. 클래스 수 증가 시 백본 학습량 확보가 필수.
 
@@ -301,7 +303,7 @@ if not isinstance(result, dict):
 ### 잘한 점
 
 - **외부 LLM을 분류기 보조로 사용** 하는 self-improving 구조 설계 — 모델의 한계를 운영으로 자가 보완.
-- **학습 로그 기반 의사결정** — ver4가 "최고점이 epoch 7" 인 걸 보고 backbone 학습량 부족 진단 → ver5 patience 완화로 +1.18%p 개선.
+- **직관 → 데이터 검증의 사후 루프** — ver4의 "덜 수렴한 느낌"을 단서로 patience·epoch을 완화해 재학습(ver5, +1.18%p), 결과 개선 후 로그를 뜯어 "backbone이 2에폭만 학습됐던 것"을 원인으로 규명. 직관을 데이터로 검증해 교훈으로 일반화한 경험.
 - **외부 API 변경 대응 패턴** — Gemini 응답 포맷 변경에도 isinstance 가드로 안전.
 
 ### 아쉬운 점 / 개선 여지
