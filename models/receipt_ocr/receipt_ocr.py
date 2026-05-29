@@ -3,7 +3,6 @@ import re
 import json
 import logging
 import mimetypes
-import concurrent.futures
 from pathlib import Path
 from dotenv import load_dotenv
 from google.cloud import documentai
@@ -49,7 +48,6 @@ except Exception as e:
     logger.warning(f"Document AI 클라이언트 초기화 실패: {e}")
 
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # ==========================================
 
@@ -143,23 +141,16 @@ def filter_with_gemini(raw_data: dict) -> dict:
 {{"purchasedAt": "2026-05-13", "ingredients": [{{"name": "재료1", "category": "VEGETABLE"}}, {{"name": "재료2", "category": "MEAT"}}]}} 또는 날짜 없을 때: {{"purchasedAt": null, "ingredients": [{{"name": "재료1", "category": "VEGETABLE"}}]}}
 """
 
-    def _call():
-        return _gemini_client.models.generate_content(
+    try:
+        response = _gemini_client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
+                # SDK 네이티브 HTTP 타임아웃(ms) — 초과 시 요청 자체가 중단되어 스레드/워커 점유 없음
+                http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT * 1000),
             )
         )
-
-    try:
-        future = _executor.submit(_call)
-        try:
-            response = future.result(timeout=GEMINI_TIMEOUT)
-        except concurrent.futures.TimeoutError:
-            future.cancel()
-            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-            return {"purchasedAt": None, "ingredients": []}
 
         parsed = json.loads(response.text)
         if not isinstance(parsed, dict):
@@ -174,7 +165,7 @@ def filter_with_gemini(raw_data: dict) -> dict:
         ingredients = []
         for item in raw_ingredients:
             if isinstance(item, dict):
-                name = item.get("name", "").strip()
+                name = (item.get("name") or "").strip()
             else:
                 name = str(item).strip()
             if not name:

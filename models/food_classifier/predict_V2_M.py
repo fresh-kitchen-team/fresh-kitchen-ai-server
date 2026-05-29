@@ -8,7 +8,6 @@ import shutil
 import json
 from datetime import datetime
 import logging
-import concurrent.futures
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -108,7 +107,6 @@ _TRANSFORM = transforms.Compose([
 
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # --------------------------------------
 # 1. 모델 준비 함수 (서버 켜질 때 딱 1번만 실행됨)
@@ -177,26 +175,19 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
 {{"label": "클래스명 또는 한국어 식품명", "category": "카테고리"}}
 """
 
-        def _call():
-            return _gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[
-                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                    prompt
-                ],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0,
-                )
+        response = _gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                prompt
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0,
+                # SDK 네이티브 HTTP 타임아웃(ms) — 초과 시 요청 자체가 중단되어 스레드/워커 점유 없음
+                http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT * 1000),
             )
-
-        future = _executor.submit(_call)
-        try:
-            response = future.result(timeout=GEMINI_TIMEOUT)
-        except concurrent.futures.TimeoutError:
-            future.cancel()
-            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-            return {"error": "Gemini 타임아웃"}
+        )
 
         result = json.loads(response.text)
         # Gemini 2.5가 종종 단일 객체를 [{...}] 배열로 감싸서 반환 → 첫 원소 추출
@@ -205,8 +196,8 @@ def gemini_predict(image_path: str, class_names: list) -> dict:
         if not isinstance(result, dict):
             return {"error": "Gemini 응답 형식 오류"}
         return {
-            "label": result.get("label", "unknown"),
-            "category": result.get("category", "ETC"),
+            "label": result.get("label") or "unknown",
+            "category": result.get("category") or "ETC",
         }
 
     except json.JSONDecodeError:

@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import mimetypes
-import concurrent.futures
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
@@ -22,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 # 모듈 수준 싱글톤 — 프로세스 전체에서 재사용
 _gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 
 def detect_fridge_items(image_path: str) -> list:
@@ -62,26 +60,19 @@ def detect_fridge_items(image_path: str) -> list:
 [{"name": "재료1", "category": "VEGETABLE"}, {"name": "재료2", "category": "MEAT"}]
 """
 
-        def _call():
-            return _gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[
-                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                    prompt
-                ],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0,
-                )
+        response = _gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                prompt
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0,
+                # SDK 네이티브 HTTP 타임아웃(ms) — 초과 시 요청 자체가 중단되어 스레드/워커 점유 없음
+                http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT * 1000),
             )
-
-        future = _executor.submit(_call)
-        try:
-            response = future.result(timeout=GEMINI_TIMEOUT)
-        except concurrent.futures.TimeoutError:
-            future.cancel()
-            logger.error(f"Gemini API 타임아웃 ({GEMINI_TIMEOUT}초 초과)")
-            return []
+        )
 
         items = json.loads(response.text)
         if not isinstance(items, list):
@@ -92,7 +83,7 @@ def detect_fridge_items(image_path: str) -> list:
         result = []
         for item in items:
             if isinstance(item, dict):
-                name = item.get("name", "").strip()
+                name = (item.get("name") or "").strip()
                 category = normalize_category(item.get("category", "ETC"))
             else:
                 name = str(item).strip()
