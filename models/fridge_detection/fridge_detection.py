@@ -2,7 +2,6 @@ import os
 import io
 import json
 import logging
-import mimetypes
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
