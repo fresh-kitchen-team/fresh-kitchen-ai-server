@@ -1,4 +1,5 @@
 import os
+import io
 import json
 import logging
 import mimetypes
@@ -7,7 +8,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from PIL import Image
 from models.category import normalize_category
+
+MAX_IMAGE_PX = 1920  # Full HD — 냉장고 사진 인식에 충분, 고해상도 원본 업로드 방지
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 load_dotenv(_PROJECT_ROOT / '.env')
@@ -28,9 +32,16 @@ def detect_fridge_items(image_path: str) -> list:
         return []
 
     try:
-        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
-        with open(image_path, "rb") as f:
-            image_bytes = f.read()
+        with Image.open(image_path) as img:
+            img = img.convert("RGB")
+            w, h = img.size
+            if max(w, h) > MAX_IMAGE_PX:
+                scale = MAX_IMAGE_PX / max(w, h)
+                img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=85)
+            image_bytes = buf.getvalue()
+        mime_type = "image/jpeg"
 
         prompt = """
 너는 냉장고 속 식재료를 파악하는 전문가야.
