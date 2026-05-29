@@ -113,7 +113,11 @@
 
 **문제**: Gemini API 특성상 응답 지연이 발생할 수 있고, 응답이 돌아오지 않으면 서버가 무한 대기(hang) 상태가 될 수 있음. 실제로 60초 초과 타임아웃이 발생한 적은 없으나, 운영 중 예외 상황에 대비한 안전장치가 필요.
 
-**해결**: 각 모듈에서 모듈 수준 싱글톤 `ThreadPoolExecutor(max_workers=1)` 를 두고, `future.result(timeout=GEMINI_TIMEOUT)` 로 상한선 설정 → 초과 시 빈 결과 반환 (재시도 없음, 사용자 대기시간 최소화).
+**1차 해결 (ThreadPoolExecutor)**: 초기에는 각 모듈에 싱글톤 `ThreadPoolExecutor(max_workers=1)` 를 두고 `future.result(timeout=GEMINI_TIMEOUT)` 로 상한선을 걸었음. 하지만 두 가지 결함이 있었음.
+- `future.cancel()` 은 **이미 실행 중인 스레드를 멈추지 못함** → 타임아웃 후에도 Gemini 호출이 백그라운드에서 유일한 워커를 계속 점유.
+- `max_workers=1` 이라 점유된 워커가 풀릴 때까지 **다음 요청이 큐에서 대기** → 동시 요청 시 사용자 대기시간이 `GEMINI_TIMEOUT` 을 초과할 수 있음.
+
+**현재 해결 (SDK 네이티브 타임아웃)**: `google-genai` SDK가 지원하는 `http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT * 1000)` (단위 ms) 로 전환. 타임아웃 시 **HTTP 요청 자체가 중단**되어 스레드/워커 점유가 없고, 스레드 풀 없이 코드도 단순해짐. 초과 시 기존 예외 처리로 빈 결과 반환 (재시도 없음).
 
 ### 7. 하드웨어 자동 감지
 
@@ -284,7 +288,7 @@ if not isinstance(result, dict):
 | **외부 API** | Google Cloud Document AI, Google Gemini 2.5 Flash (`google-genai`) |
 | **이미지** | Pillow 12.2 |
 | **데이터 수집** | ddgs (DuckDuckGo 크롤러) |
-| **기타** | python-dotenv, hmac, tempfile, concurrent.futures |
+| **기타** | python-dotenv, hmac, tempfile |
 
 ---
 
