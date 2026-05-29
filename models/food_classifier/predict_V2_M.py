@@ -18,12 +18,14 @@ from models.category import normalize_category
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_BASE_DIR, '.env'))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# 70 클래스 기준 softmax 최댓값이 80% 미만이면 노이즈 영역 — Gemini에 위임
 CONFIDENCE_THRESHOLD = 80.0
 SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
 GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
 
 logger = logging.getLogger(__name__)
 
+# 새 클래스 추가 시 반드시 여기에도 매핑 추가 — 누락 시 ETC로 처리되고 경고 로그 출력
 CLASS_CATEGORY = {
     "멸치": "SEAFOOD",
     "사과": "FRUIT",

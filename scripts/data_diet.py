@@ -1,13 +1,11 @@
 import os
 import random
 
-# ==========================================
-# 1. 설정 (종현님의 요구사항 반영)
-# ==========================================
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_ROOT = os.path.join(_BASE_DIR, 'dataset')
-TRAIN_LIMIT = 400         # train 폴더의 목표 개수
-VAL_LIMIT = 80         # val 폴더의 목표 개수
+# 클래스별 상한 — 데이터 불균형 완화 + 학습 시간 적정 수준 유지
+TRAIN_LIMIT = 400
+VAL_LIMIT = 80
 
 def limit_class_images(target_dir, limit):
     """지정된 폴더 내의 모든 클래스별 이미지 개수를 limit 이하로 맞춥니다."""

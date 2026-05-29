@@ -253,7 +253,7 @@ def crawl_class(class_name, queries, limit):
         except Exception:
             pass
 
-        time.sleep(2)
+        time.sleep(2)  # DuckDuckGo rate limit 방지
 
     convert_to_jpg(class_dir)
     final = count_images(class_dir)

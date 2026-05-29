@@ -89,6 +89,7 @@ def process_receipt_raw(file_path: str) -> dict:
                 for prop in entity.properties:
                     if prop.type_ == "line_item/description":
                         text = prop.mention_text.strip()
+                        # 한글·공백만 남김 — 영문 브랜드명·숫자·특수문자 1차 제거
                         clean_text = re.sub(r'[^가-힣\s]', '', text).strip()
                         clean_text = re.sub(r'\s+', ' ', clean_text)
                         if clean_text and len(clean_text) > 1:
