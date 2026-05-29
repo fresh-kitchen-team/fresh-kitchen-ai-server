@@ -3,7 +3,6 @@ import re
 import json
 import logging
 import mimetypes
-from pathlib import Path
 from dotenv import load_dotenv
 from google.cloud import documentai
 from google import genai
@@ -14,14 +13,14 @@ from models.category import normalize_category
 # [1. 설정 구역]
 # ==========================================
 
-_PROJECT_ROOT = Path(__file__).parent.parent.parent
-load_dotenv(_PROJECT_ROOT / '.env')
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv(os.path.join(_BASE_DIR, '.env'))
 
 # GOOGLE_APPLICATION_CREDENTIALS: None 방지 + 상대경로 → 절대경로 변환
 _creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 if _creds:
     if not os.path.isabs(_creds):
-        _creds = str((_PROJECT_ROOT / _creds).resolve())
+        _creds = os.path.abspath(os.path.join(_BASE_DIR, _creds))
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = _creds
 
 project_id = os.getenv("PROJECT_ID")
@@ -187,7 +186,7 @@ def filter_with_gemini(raw_data: dict) -> dict:
 
 
 if __name__ == "__main__":
-    TARGET_FILE = os.path.join(str(_PROJECT_ROOT), 'dataset', 'test_real_image', 'receipt.png')
+    TARGET_FILE = os.path.join(_BASE_DIR, 'dataset', 'test_real_image', 'receipt.png')
 
     raw_data = process_receipt_raw(TARGET_FILE)
 

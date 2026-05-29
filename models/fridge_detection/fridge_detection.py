@@ -2,7 +2,6 @@ import os
 import io
 import json
 import logging
-from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -11,8 +10,8 @@ from models.category import normalize_category
 
 MAX_IMAGE_PX = 1920  # Full HD — 냉장고 사진 인식에 충분, 고해상도 원본 업로드 방지
 
-_PROJECT_ROOT = Path(__file__).parent.parent.parent
-load_dotenv(_PROJECT_ROOT / '.env')
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv(os.path.join(_BASE_DIR, '.env'))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
 
@@ -101,7 +100,7 @@ def detect_fridge_items(image_path: str) -> list:
 
 
 if __name__ == "__main__":
-    test_image = os.path.join(str(_PROJECT_ROOT), "samples", "fridge", "fridge_test.jpeg")
+    test_image = os.path.join(_BASE_DIR, "samples", "fridge", "fridge_test.jpeg")
     print(f"🔍 '{test_image}' 분석 중...")
     result = detect_fridge_items(test_image)
     print(f"\n🥦 감지된 식재료 목록:")

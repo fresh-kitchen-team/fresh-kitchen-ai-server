@@ -322,8 +322,7 @@ def main():
     print("="*45)
 
     # 클래스별 정확도 CSV 저장 (베스트 모델 기준)
-    class_acc_log_path = CLASS_ACC_LOG_PATH
-    with open(class_acc_log_path, 'w', newline='') as f:
+    with open(CLASS_ACC_LOG_PATH, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['class', 'correct', 'total', 'accuracy'])
         for cls in sorted_classes:
@@ -345,7 +344,7 @@ def main():
     }, SAVE_PATH)
     print(f"💾 모델 저장 완료: {SAVE_PATH}")
     print(f"📝 학습 로그 저장 완료: {LOG_PATH}")
-    print(f"📝 클래스별 정확도 저장 완료: {class_acc_log_path}")
+    print(f"📝 클래스별 정확도 저장 완료: {CLASS_ACC_LOG_PATH}")
 
 if __name__ == '__main__':
     main()
