@@ -324,7 +324,7 @@ fresh-kitchen-ai-server/
 | OCR | Google Cloud Document AI | 3.14.0 |
 | LLM / Vision | Google Gemini API (google-genai) | 1.75.0 |
 | 환경 변수 | python-dotenv | 1.2.2 |
-| 이미지 크롤러 | ddgs | ≥ 2.0.0 |
+| 이미지 크롤러 | ddgs | 9.14.4 |
 
 전체 의존성은 [`requirements.txt`](requirements.txt) 참고.
 
