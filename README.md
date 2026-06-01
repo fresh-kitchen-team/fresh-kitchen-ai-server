@@ -5,6 +5,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10.19-blue)]() [![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688)]() [![PyTorch](https://img.shields.io/badge/PyTorch-2.11-EE4C2C)]()
 
+> 📓 **개발 일지** — 모델 진화(ver1 → ver5), 주요 기술적 의사결정과 시행착오는 [`DEVLOG.md`](DEVLOG.md) 에 기록되어 있습니다.
+
 ---
 
 ## 목차
