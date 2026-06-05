@@ -71,8 +71,10 @@
 | **4.24** | 2차 자문 피드백 | 평가용 reference dataset 필요성 제기 + "그냥 VLM 쓰는 건 어때?" 제안. 이를 계기로 **VLM을 Auto-Labeler로 쓰는 Self-improving 4단계 구조를 직접 설계** |
 | **4.27** | VLM 결합 | 자문 피드백 반영해 분류기 + VLM 폴백 구조 결합 검토 |
 | **5.02~** | Git 이력 시작 / 3파이프라인 연동 | 서버·파이프라인 코드 형상관리 시작. ver2(35클래스) 분류기를 운영 모델로 FastAPI에 통합, 3종 파이프라인을 **백엔드와 JSON 응답 형식을 통일**해가며 수정 |
+| **5.03** | ver2 학습 | 35 클래스 첫 분류기 학습 (val_acc **94.56%**) |
 | **5.13** | ver3 / 냉장고 전환 | 60 클래스 재학습(val_acc 94.73%). 냉장고 감지를 **YOLO → Gemini Vision** 으로 확정 (COCO 한국 식재료 미포함 + 연계안 다중 호출 지연 + YOLO-World 한국어 불안정) |
-| **5.27** | ver4 → ver5 ⭐ | 70 한글 클래스 + Progressive Unfreezing(ver4, 95.42%) → Early Stopping patience 완화로 backbone 학습량 확보(ver5, val_acc **96.60%**) |
+| **5.27** | ver4 학습 | 70 한글 클래스 + Progressive Unfreezing 도입 (val_acc 95.42%) |
+| **5.28** | ver5 학습 ⭐ | Early Stopping patience 완화로 backbone 학습량 확보 (val_acc **96.60%**) |
 | **5.29** | 운영 안정화 | 타임아웃·인증·문서 정비 |
 
 ---
