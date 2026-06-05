@@ -15,6 +15,7 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 DATA_DIR = os.path.join(_BASE_DIR, 'dataset', 'val')
 MODEL_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver5.pth')
 CM_CSV_PATH = os.path.join(_BASE_DIR, 'docs', 'logs', 'confusion_matrix_val.csv')
+METRICS_CSV_PATH = os.path.join(_BASE_DIR, 'docs', 'logs', 'class_metrics_val.csv')
 BATCH_SIZE = 8   # MPS 안정성 최우선
 NUM_WORKERS = 0  # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
 TOP_CONFUSION = 15  # 출력할 최다 혼동 쌍 개수
@@ -115,34 +116,50 @@ def main():
                 print(f"  진행 중: Batch {batch_idx + 1}/{num_batches}", end='\r', flush=True)
 
     # --------------------------------------
-    # 6. 지표 계산
+    # 6. 지표 계산 (Accuracy / 클래스별 Precision·Recall·F1)
     # --------------------------------------
     diag = confusion.diag()
-    class_total = confusion.sum(dim=1)            # 클래스별 실제 개수
+    row_sum = confusion.sum(dim=1)   # 클래스별 실제 개수 (TP+FN)
+    col_sum = confusion.sum(dim=0)   # 클래스별 예측 개수 (TP+FP)
     total_correct = int(diag.sum().item())
     total = int(confusion.sum().item())
     overall_acc = 100.0 * total_correct / total if total else 0.0
 
-    print("\n" + "=" * 50)
-    print(f"🏆 검증(val) 정확도: {overall_acc:.2f}% ({total_correct}/{total})")
-    print("   ※ held-out test set 이 아닌 val 기준 — 절대 수치는 다소 낙관적일 수 있음")
-    print("=" * 50)
-
-    # 6-1. 클래스별 정확도 (낮은 순)
-    print("\n📊 [클래스별 정확도 — 낮은 순]")
-    per_class = []
+    # 클래스별 one-vs-rest TP/FP/FN → Precision/Recall/F1
+    # metrics[i] = (i, tp, fp, fn, precision, recall, f1)
+    metrics = []
     for i in range(n):
-        tot = int(class_total[i].item())
-        acc = 100.0 * int(diag[i].item()) / tot if tot > 0 else 0.0
-        per_class.append((acc, i, tot))
-    for acc, i, tot in sorted(per_class, key=lambda x: x[0]):
-        if tot > 0:
-            bar = "🟩" * int(acc // 20) + "⬜" * (5 - int(acc // 20))
-            print(f"   {class_names[i]:<15} : {acc:>6.1f}% {bar} ({int(diag[i].item())}/{tot})")
-        else:
-            print(f"   {class_names[i]:<15} : 데이터 없음")
+        tp = int(diag[i].item())
+        fn = int(row_sum[i].item()) - tp
+        fp = int(col_sum[i].item()) - tp
+        precision = tp / (tp + fp) if (tp + fp) else 0.0
+        recall = tp / (tp + fn) if (tp + fn) else 0.0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
+        metrics.append((i, tp, fp, fn, precision, recall, f1))
 
-    # 6-2. 최다 혼동 쌍 (off-diagonal Top N)
+    valid = [m for m in metrics if (m[1] + m[3]) > 0]  # 실제 표본이 있는 클래스만
+    macro_p = sum(m[4] for m in valid) / len(valid) if valid else 0.0
+    macro_r = sum(m[5] for m in valid) / len(valid) if valid else 0.0
+    macro_f = sum(m[6] for m in valid) / len(valid) if valid else 0.0
+
+    print("\n" + "=" * 60)
+    print(f"🏆 검증(val) 정확도: {overall_acc:.2f}% ({total_correct}/{total})")
+    print(f"   Macro 평균  P={macro_p * 100:.1f}%  R={macro_r * 100:.1f}%  F1={macro_f * 100:.1f}%")
+    print("   ※ held-out test set 이 아닌 val 기준 — 절대 수치는 다소 낙관적일 수 있음")
+    print("=" * 60)
+
+    # 6-1. 클래스별 Precision / Recall / F1 (F1 낮은 순)
+    print("\n📊 [클래스별 Precision / Recall / F1 — F1 낮은 순]")
+    print(f"   {'클래스':<12}{'P':>8}{'R':>8}{'F1':>8}   (TP/FP/FN)")
+    for i, tp, fp, fn, p, r, f1 in sorted(valid, key=lambda x: x[6]):
+        print(f"   {class_names[i]:<12}{p * 100:7.1f}%{r * 100:7.1f}%{f1 * 100:7.1f}%   ({tp}/{fp}/{fn})")
+
+    # 6-2. FP 자석 (Precision 낮은 순 — 다른 클래스의 오답이 몰리는 클래스)
+    print("\n🧲 [FP 자석 Top 10 — Precision 낮은 순 (오답이 이 클래스로 몰림)]")
+    for i, tp, fp, fn, p, r, f1 in sorted(valid, key=lambda x: x[4])[:10]:
+        print(f"   {class_names[i]:<12} P={p * 100:5.1f}%  (FP {fp}건 / 자기 오류 FN {fn}건)")
+
+    # 6-3. 최다 혼동 쌍 (off-diagonal Top N)
     print(f"\n🔀 [최다 혼동 쌍 Top {TOP_CONFUSION}] (실제 → 예측 : 횟수)")
     pairs = []
     for t in range(n):
@@ -153,7 +170,7 @@ def main():
     if not pairs:
         print("   혼동 없음 (완벽 분류)")
     for cnt, t, p in pairs[:TOP_CONFUSION]:
-        tot = int(class_total[t].item())
+        tot = int(row_sum[t].item())
         ratio = 100.0 * cnt / tot if tot else 0.0
         print(f"   {class_names[t]:<10} → {class_names[p]:<10} : {cnt:>3}회 "
               f"(해당 클래스의 {ratio:.1f}%)")
@@ -169,6 +186,17 @@ def main():
         for i in range(n):
             writer.writerow([class_names[i]] + [int(confusion[i][j].item()) for j in range(n)])
     print(f"\n💾 전체 혼동행렬 저장 → {os.path.relpath(CM_CSV_PATH, _BASE_DIR)}")
+
+    # 클래스별 지표 CSV (TP/FP/FN/Precision/Recall/F1)
+    with open(METRICS_CSV_PATH, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f)
+        writer.writerow(["class", "TP", "FP", "FN", "precision", "recall", "f1"])
+        for i, tp, fp, fn, p, r, f1 in metrics:
+            writer.writerow([class_names[i], tp, fp, fn,
+                             f"{p:.4f}", f"{r:.4f}", f"{f1:.4f}"])
+        writer.writerow(["__macro__", "", "", "",
+                         f"{macro_p:.4f}", f"{macro_r:.4f}", f"{macro_f:.4f}"])
+    print(f"💾 클래스별 지표 저장 → {os.path.relpath(METRICS_CSV_PATH, _BASE_DIR)}")
     print("\n✅ 평가 완료!")
 
 
