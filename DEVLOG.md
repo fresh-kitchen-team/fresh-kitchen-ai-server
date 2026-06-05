@@ -221,11 +221,12 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 
 ### 오류 원인 진단 — 혼동행렬 분석
 
-검증셋 기준 혼동행렬(`models/food_classifier/eval_val_V2_M.py`, 결과 `docs/logs/ver5/confusion_matrix_val.csv`·`class_metrics_val.csv`)로 클래스별 오분류 방향을 분석했다.
+검증셋 기준으로 단순 정확도를 넘어 **클래스별 Precision·Recall·F1**(`models/food_classifier/eval_val_V2_M.py`, 결과 `docs/logs/ver5/confusion_matrix_val.csv`·`class_metrics_val.csv`)까지 산출했다. **Macro 평균 P 96.8% / R 96.6% / F1 96.6%** 로 특정 방향 편향 없이 고르게 높았으며, 혼동행렬로 클래스별 오분류 방향을 분석했다.
 
 - **치즈 = 최대 단일 혼동**: 치즈 오류의 약 40%(4/10)가 **버터**로 분류됨 — 둘 다 옅은 노란 블록 형태. "치즈가 약하다"를 넘어 **원인이 버터와의 혼동임을 특정**.
 - **생고기 클러스터**: 돼지고기 오류 대부분이 소고기·닭고기(각 3건). 색·질감이 유사한 본질적 난제.
 - **나머지 혼동도 의미적으로 일관**: 장류(고추장↔된장), 구근(감자↔고구마), 녹색 채소(오이↔애호박) 등 — 무작위 오류가 아니라 **시각적으로 유사한 쌍에 집중**.
+- **FP 자석 식별**: 햄·떡·버섯은 Recall 은 높지만 다른 클래스 오답이 몰려 Precision 이 상대적으로 낮음(예: 햄 P 85.5%) — Recall(클래스별 정확도)만으로는 안 보이던 약점을 Precision 으로 포착.
 
 → 오류가 하이퍼파라미터가 아니라 **유사 클래스 데이터의 문제**임이 확인됨. 개선 방향은 grid search 가 아니라 **혼동 쌍 타깃 hard negative 보강**이 정공법. (별도 held-out test set 이 없어 val 기준 진단이며, 혼동 패턴 자체는 셋 무관하게 유효)
 
