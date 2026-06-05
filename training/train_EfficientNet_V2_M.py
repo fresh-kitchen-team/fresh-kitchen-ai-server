@@ -22,14 +22,14 @@ PATIENCE = 8
 LABEL_SMOOTHING = 0.1   # 정답 레이블을 0.9로 낮춰 과신뢰 방지, softmax 피크값 낮아지는 부작용 있음
 GRAD_CLIP_NORM = 1.0    # 기울기 폭발 방지 — backbone 전체 해동 후 불안정 구간 대비
 UNFREEZE_EPOCH = 5      # head 위주로 수렴시킨 후 backbone 전체 해동 (Progressive Unfreezing)
-# 재학습 시 둘 다 변경 (예: 'ver6', '6_10') — 기존 버전 로그·가중치 덮어쓰기 방지
+# 재학습 시 둘 다 변경 (예: 'ver6', '0610') — 기존 버전 로그·가중치 덮어쓰기 방지
 MODEL_VERSION = 'ver5'
-MODEL_DATE = '5_28'      # 로그 파일명 접미사 (월_일)
+MODEL_DATE = '0528'      # 로그 폴더명 접미사 (MMDD) → docs/logs/ver5_0528/
 SAVE_PATH = os.path.join(_BASE_DIR, f'best_food_model_v2_m_{MODEL_VERSION}.pth')
-_LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', MODEL_VERSION)
+_LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', f'{MODEL_VERSION}_{MODEL_DATE}')
 os.makedirs(_LOG_DIR, exist_ok=True)
-LOG_PATH = os.path.join(_LOG_DIR, f'training_log_{MODEL_DATE}.csv')
-CLASS_ACC_LOG_PATH = os.path.join(_LOG_DIR, f'class_acc_{MODEL_DATE}.csv')
+LOG_PATH = os.path.join(_LOG_DIR, 'training_log.csv')
+CLASS_ACC_LOG_PATH = os.path.join(_LOG_DIR, 'class_acc.csv')
 NUM_WORKERS = 4
 
 def remove_corrupted_images(directory):

@@ -12,14 +12,14 @@ from torch.utils.data import DataLoader
 # val 은 early stopping·모델 선택에 사용된 셋이라 절대 수치는 다소 낙관적일 수 있으나,
 # "어떤 클래스가 무엇과 혼동되는가" 라는 혼동 패턴 진단에는 충분하다.
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# 평가 대상 모델 버전 — 결과물도 docs/logs/<버전>/ 에 모인다
+# 평가 대상 모델 버전 — 결과물도 docs/logs/<버전>_<날짜>/ 에 모인다
 MODEL_VERSION = 'ver5'
-MODEL_DATE = '5_28'      # 결과 파일명 접미사 (해당 모델 버전 기준)
+MODEL_DATE = '0528'      # 로그 폴더명 접미사 (MMDD) → docs/logs/ver5_0528/
 DATA_DIR = os.path.join(_BASE_DIR, 'dataset', 'val')
 MODEL_PATH = os.path.join(_BASE_DIR, f'best_food_model_v2_m_{MODEL_VERSION}.pth')
-_LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', MODEL_VERSION)
-CM_CSV_PATH = os.path.join(_LOG_DIR, f'confusion_matrix_val_{MODEL_DATE}.csv')
-METRICS_CSV_PATH = os.path.join(_LOG_DIR, f'class_metrics_val_{MODEL_DATE}.csv')
+_LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', f'{MODEL_VERSION}_{MODEL_DATE}')
+CM_CSV_PATH = os.path.join(_LOG_DIR, 'confusion_matrix_val.csv')
+METRICS_CSV_PATH = os.path.join(_LOG_DIR, 'class_metrics_val.csv')
 BATCH_SIZE = 8   # MPS 안정성 최우선
 NUM_WORKERS = 0  # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
 TOP_CONFUSION = 15  # 출력할 최다 혼동 쌍 개수

@@ -233,9 +233,9 @@ python -m models.food_classifier.eval_val_V2_M
 ```
 
 - `test_V2_M` — `dataset/test/` 기준 전체·클래스별 정확도 출력
-- `eval_val_V2_M` — `dataset/val/` 기준 정확도(Precision·Recall·F1·Macro)와 **클래스별 오분류 방향(혼동행렬)** 분석. 결과는 `docs/logs/ver5/` 에 `confusion_matrix_val_5_28.csv`·`class_metrics_val_5_28.csv` 로 저장 (재학습 없이 동작, val 폴더는 읽기 전용)
+- `eval_val_V2_M` — `dataset/val/` 기준 정확도(Precision·Recall·F1·Macro)와 **클래스별 오분류 방향(혼동행렬)** 분석. 결과는 `docs/logs/ver5_0528/` 에 `confusion_matrix_val.csv`·`class_metrics_val.csv` 로 저장 (재학습 없이 동작, val 폴더는 읽기 전용)
 
-학습·평가 로그는 **버전별 폴더** `docs/logs/<버전>/` 에 모읍니다 (파일명에 학습 날짜 병기, 예: `docs/logs/ver5/training_log_5_28.csv`).
+학습·평가 로그는 **버전+날짜 폴더** `docs/logs/<버전>_<MMDD>/` 에 모읍니다 (예: `docs/logs/ver5_0528/training_log.csv`).
 
 > **단독 실행 시 주의** — `models/` 하위 모듈(`predict_V2_M`·`receipt_ocr`·`fridge_detection`·`test_V2_M`)은
 > 절대 import(`from models.category import ...`)를 사용하므로 **프로젝트 루트에서 `python -m` 모듈 형태**로 실행해야 합니다.
@@ -310,7 +310,7 @@ fresh-kitchen-ai-server/
 │
 ├── docs/
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
-│   └── logs/                               # 버전별 학습·평가 로그 (ver2~ver5/)
+│   └── logs/                               # 버전+날짜별 학습·평가 로그 (ver2_0503 ~ ver5_0528/)
 │
 ├── credentials/                            # GCP 서비스 계정 키 (git 제외)
 ├── samples/                                # 로컬 단독 실행 테스트 이미지 (git 제외)
