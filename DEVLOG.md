@@ -192,10 +192,10 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 
 | 버전 | 클래스 수 | 데이터셋 | 최대 Epoch | Patience | 최고 val_acc | 주요 변경 |
 |---|---|---|---|---|---|---|
-| **ver2** | 35 (영문) | Train 7,315 / Val 1,803 | 30 | - | 94.56% | 초기 베이스라인 |
-| **ver3** | 60 (영문) | Train 11,050 / Val 2,731 | 30 | - | 94.73% | 클래스 +25 확장 |
-| **ver4** | 70 (한글) | Train 12,714 / Val 3,145 | 30 | 5 | 95.42% | 한글 클래스명 전환 + Progressive Unfreezing 도입 |
-| **ver5** ⭐ | 70 (한글) | Train 12,714 / Val 3,145 | **50** | **8** | **96.60%** | Early Stopping patience 완화 |
+| **ver2** (5/3) | 35 (영문) | Train 7,315 / Val 1,803 | 30 | - | 94.56% | 초기 베이스라인 |
+| **ver3** (5/13) | 60 (영문) | Train 11,050 / Val 2,731 | 30 | - | 94.73% | 클래스 +25 확장 |
+| **ver4** (5/27) | 70 (한글) | Train 12,714 / Val 3,145 | 30 | 5 | 95.42% | 한글 클래스명 전환 + Progressive Unfreezing 도입 |
+| **ver5** ⭐ (5/28) | 70 (한글) | Train 12,714 / Val 3,145 | **50** | **8** | **96.60%** | Early Stopping patience 완화 |
 
 ### ver4 → ver5 의 결정적 차이
 
