@@ -22,9 +22,13 @@ PATIENCE = 8
 LABEL_SMOOTHING = 0.1   # 정답 레이블을 0.9로 낮춰 과신뢰 방지, softmax 피크값 낮아지는 부작용 있음
 GRAD_CLIP_NORM = 1.0    # 기울기 폭발 방지 — backbone 전체 해동 후 불안정 구간 대비
 UNFREEZE_EPOCH = 5      # head 위주로 수렴시킨 후 backbone 전체 해동 (Progressive Unfreezing)
-SAVE_PATH = os.path.join(_BASE_DIR, 'best_food_model_v2_m_ver5.pth')
-LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'logs', 'training_log_5_28.csv')
-CLASS_ACC_LOG_PATH = os.path.join(_BASE_DIR, 'docs', 'logs', 'training_log_class_acc_5_28.csv')
+# 재학습 시 새 버전으로 변경 (예: 'ver6') — 기존 버전 로그·가중치 덮어쓰기 방지
+MODEL_VERSION = 'ver5'
+SAVE_PATH = os.path.join(_BASE_DIR, f'best_food_model_v2_m_{MODEL_VERSION}.pth')
+_LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', MODEL_VERSION)
+os.makedirs(_LOG_DIR, exist_ok=True)
+LOG_PATH = os.path.join(_LOG_DIR, 'training_log.csv')
+CLASS_ACC_LOG_PATH = os.path.join(_LOG_DIR, 'class_acc.csv')
 NUM_WORKERS = 4
 
 def remove_corrupted_images(directory):
