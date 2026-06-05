@@ -14,11 +14,12 @@ from torch.utils.data import DataLoader
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # 평가 대상 모델 버전 — 결과물도 docs/logs/<버전>/ 에 모인다
 MODEL_VERSION = 'ver5'
+MODEL_DATE = '5_28'      # 결과 파일명 접미사 (해당 모델 버전 기준)
 DATA_DIR = os.path.join(_BASE_DIR, 'dataset', 'val')
 MODEL_PATH = os.path.join(_BASE_DIR, f'best_food_model_v2_m_{MODEL_VERSION}.pth')
 _LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', MODEL_VERSION)
-CM_CSV_PATH = os.path.join(_LOG_DIR, 'confusion_matrix_val.csv')
-METRICS_CSV_PATH = os.path.join(_LOG_DIR, 'class_metrics_val.csv')
+CM_CSV_PATH = os.path.join(_LOG_DIR, f'confusion_matrix_val_{MODEL_DATE}.csv')
+METRICS_CSV_PATH = os.path.join(_LOG_DIR, f'class_metrics_val_{MODEL_DATE}.csv')
 BATCH_SIZE = 8   # MPS 안정성 최우선
 NUM_WORKERS = 0  # MPS는 멀티프로세싱 비활성화 (메모리 안정성)
 TOP_CONFUSION = 15  # 출력할 최다 혼동 쌍 개수

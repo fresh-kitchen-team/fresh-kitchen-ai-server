@@ -201,7 +201,7 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 
 **결정 과정**: ver4는 `EPOCHS`·`PATIENCE` 기준을 명확히 세우지 못한 채 직관으로 설정. 학습 종료 후 95.42% 라는 수치에도 backbone이 덜 수렴한 듯한 찜찜함이 남아 `EPOCHS=50, PATIENCE=8` 로 완화해 재학습 → 96.60% 개선. 결과가 좋아진 **뒤** 학습 로그를 뜯어 원인을 규명한 사후 검증 케이스.
 
-**로그로 확인한 원인** (`docs/logs/ver4/training_log.csv`): ver4 는 backbone 전체 해동이 epoch 6 에 일어났고 epoch 7 에 바로 최고점(95.42%) 달성 → **저장된 best 모델 기준 backbone은 단 2 에폭(epoch 6·7)만 학습된 상태.** patience=5 소진으로 epoch 12 에 조기 종료되지만, 저장된 가중치는 epoch 7 것이라 backbone이 충분히 수렴하지 못한 게 찜찜함의 정체.
+**로그로 확인한 원인** (`docs/logs/ver4/training_log_5_27.csv`): ver4 는 backbone 전체 해동이 epoch 6 에 일어났고 epoch 7 에 바로 최고점(95.42%) 달성 → **저장된 best 모델 기준 backbone은 단 2 에폭(epoch 6·7)만 학습된 상태.** patience=5 소진으로 epoch 12 에 조기 종료되지만, 저장된 가중치는 epoch 7 것이라 backbone이 충분히 수렴하지 못한 게 찜찜함의 정체.
 
 **ver5의 결과**: `PATIENCE=8` 완화로 backbone 학습 시간 확보. ReduceLROnPlateau가 LR을 자동 반감(1e-5 → 5e-6 → ... → 6.25e-7)하며 epoch 29 최고점 → epoch 37 조기 종료. 직관에서 출발한 재학습이 적중했고, **로그 분석으로 그 이유를 규명해 교훈으로 일반화**.
 
@@ -221,7 +221,7 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 
 ### 오류 원인 진단 — 혼동행렬 분석
 
-검증셋 기준으로 단순 정확도를 넘어 **클래스별 Precision·Recall·F1**(`models/food_classifier/eval_val_V2_M.py`, 결과 `docs/logs/ver5/confusion_matrix_val.csv`·`class_metrics_val.csv`)까지 산출했다. **Macro 평균 P 96.8% / R 96.6% / F1 96.6%** 로 특정 방향 편향 없이 고르게 높았으며, 혼동행렬로 클래스별 오분류 방향을 분석했다.
+검증셋 기준으로 단순 정확도를 넘어 **클래스별 Precision·Recall·F1**(`models/food_classifier/eval_val_V2_M.py`, 결과 `docs/logs/ver5/confusion_matrix_val_5_28.csv`·`class_metrics_val_5_28.csv`)까지 산출했다. **Macro 평균 P 96.8% / R 96.6% / F1 96.6%** 로 특정 방향 편향 없이 고르게 높았으며, 혼동행렬로 클래스별 오분류 방향을 분석했다.
 
 - **치즈 = 최대 단일 혼동**: 치즈 오류의 약 40%(4/10)가 **버터**로 분류됨 — 둘 다 옅은 노란 블록 형태. "치즈가 약하다"를 넘어 **원인이 버터와의 혼동임을 특정**.
 - **생고기 클러스터**: 돼지고기 오류 대부분이 소고기·닭고기(각 3건). 색·질감이 유사한 본질적 난제.
