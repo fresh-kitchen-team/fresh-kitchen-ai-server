@@ -225,10 +225,17 @@ python training/train_EfficientNet_V2_M.py
 ### 평가
 
 ```bash
+# test set 기준 전체·클래스별 정확도
 python -m models.food_classifier.test_V2_M
+
+# val set 기준 정확도 + 혼동행렬 (최다 혼동 쌍 진단)
+python -m models.food_classifier.eval_val_V2_M
 ```
 
-`dataset/test/` 기준 전체 정확도와 클래스별 정확도 출력. 학습 로그는 `docs/logs/training_log_*.csv` 에 저장됩니다.
+- `test_V2_M` — `dataset/test/` 기준 전체·클래스별 정확도 출력
+- `eval_val_V2_M` — `dataset/val/` 기준 정확도와 **클래스별 오분류 방향(혼동행렬)** 분석. 전체 행렬은 `docs/logs/confusion_matrix_val.csv` 로 저장 (재학습 없이 동작, val 폴더는 읽기 전용)
+
+학습 로그는 `docs/logs/training_log_*.csv` 에 저장됩니다.
 
 > **단독 실행 시 주의** — `models/` 하위 모듈(`predict_V2_M`·`receipt_ocr`·`fridge_detection`·`test_V2_M`)은
 > 절대 import(`from models.category import ...`)를 사용하므로 **프로젝트 루트에서 `python -m` 모듈 형태**로 실행해야 합니다.
@@ -284,7 +291,8 @@ fresh-kitchen-ai-server/
 │   ├── category.py                          # 카테고리 enum + normalize_category()
 │   ├── food_classifier/
 │   │   ├── predict_V2_M.py                  # EfficientNet 추론 + Gemini 폴백
-│   │   └── test_V2_M.py                     # 정확도 평가
+│   │   ├── test_V2_M.py                     # test set 정확도 평가
+│   │   └── eval_val_V2_M.py                 # val set 정확도 + 혼동행렬 진단
 │   ├── receipt_ocr/
 │   │   └── receipt_ocr.py                   # Document AI + Gemini OCR
 │   └── fridge_detection/
