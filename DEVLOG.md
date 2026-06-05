@@ -192,8 +192,8 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 |---|---|---|---|---|---|---|
 | **ver2** | 35 (영문) | Train 7,315 / Val 1,803 | 30 | - | 94.56% | 초기 베이스라인 |
 | **ver3** | 60 (영문) | Train 11,050 / Val 2,731 | 30 | - | 94.73% | 클래스 +25 확장 |
-| **ver4** | 70 (한글) | Train 12,714 / Val 3,147 | 30 | 5 | 95.42% | 한글 클래스명 전환 + Progressive Unfreezing 도입 |
-| **ver5** ⭐ | 70 (한글) | Train 12,714 / Val 3,147 | **50** | **8** | **96.60%** | Early Stopping patience 완화 |
+| **ver4** | 70 (한글) | Train 12,714 / Val 3,145 | 30 | 5 | 95.42% | 한글 클래스명 전환 + Progressive Unfreezing 도입 |
+| **ver5** ⭐ | 70 (한글) | Train 12,714 / Val 3,145 | **50** | **8** | **96.60%** | Early Stopping patience 완화 |
 
 ### ver4 → ver5 의 결정적 차이
 
@@ -288,7 +288,7 @@ if not isinstance(result, dict):
 
 ## 데이터 파이프라인
 
-공개 데이터셋 한계로 직접 크롤링·선별해 약 **15,000장**(ver5 기준 train 12,714 / val 3,147)의 자체 데이터셋을 구축했다 (배경은 "마주친 문제" 1번 참고). 새 클래스 추가 시 5단계 자동 파이프라인:
+공개 데이터셋 한계로 직접 크롤링·선별해 약 **15,000장**(ver5 기준 train 12,714 / val 3,145)의 자체 데이터셋을 구축했다 (배경은 "마주친 문제" 1번 참고). 새 클래스 추가 시 5단계 자동 파이프라인:
 
 1. **`data_crawl.py`** — DuckDuckGo (`ddgs` 패키지) 로 클래스별 이미지 자동 다운로드
 2. **`data_clean.py`** — MD5 해시로 중복 제거 (split 간 누수 차단)
