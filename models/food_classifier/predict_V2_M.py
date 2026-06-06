@@ -242,6 +242,10 @@ def predict_image(model, device, image_path: str, class_names: list) -> dict:
 
     except FileNotFoundError:
         return {"error": f"'{image_path}' 사진을 찾을 수 없습니다."}
+    except (OSError, ValueError) as e:
+        # 손상·미완성 이미지 등 디코딩 실패 — 매직바이트는 통과했어도 본문이 깨진 경우
+        logger.warning(f"이미지 디코딩 실패: {e}")
+        return {"error": "이미지를 디코딩할 수 없습니다."}
 
     with torch.no_grad():
         outputs = model(input_tensor)
