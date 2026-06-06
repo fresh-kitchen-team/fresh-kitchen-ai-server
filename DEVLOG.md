@@ -184,6 +184,14 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 | 임시 파일 | `tempfile.NamedTemporaryFile` + `finally` 블록 `os.unlink()` 즉시 삭제 |
 | 500 응답 | 클라이언트에는 고정 메시지만, 스택 트레이스는 `server.log` 에만 |
 
+### 10. 동기 엔드포인트로 이벤트 루프 블로킹 회피
+
+**문제**: 세 엔드포인트가 `async def` 인데 내부에서 torch 추론·Document AI·Gemini 호출 같은 **블로킹 작업을 `await` 없이** 실행. async 핸들러의 블로킹 호출은 이벤트 루프를 점유하므로, 한 요청이 Gemini 응답을 수 초 기다리는 동안 **다른 요청·헬스체크까지 멈춤** (`#6` 의 워커 점유 문제와 같은 맥락).
+
+**해결**: 세 엔드포인트를 `def`(동기) 로 전환. FastAPI는 `def` 핸들러를 **외부 스레드풀**에서 실행하므로 블로킹 작업이 루프를 막지 않고 요청이 병렬 처리됨. `await file.read()` 는 동기 읽기 `file.file.read()` 로 대체.
+
+**추가 안전장치**: 스레드풀 동시 실행으로 모델이 여러 스레드에서 동시에 호출될 수 있는데 **MPS 는 멀티스레드 추론이 불안정**하므로, 음식 분류 추론을 `threading.Lock` 으로 직렬화. OCR·냉장고는 네트워크 I/O 라 스레드 동시 실행이 안전해 잠금 없이 병렬 유지.
+
 ---
 
 ## 모델 진화 과정
