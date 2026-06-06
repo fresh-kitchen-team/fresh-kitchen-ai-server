@@ -2,6 +2,7 @@ import os
 import hmac
 import logging
 import tempfile
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
@@ -44,6 +45,10 @@ food_model = None
 food_device = None
 food_classes = None
 
+# MPS는 멀티스레드 추론이 불안정 → 추론을 직렬화한다.
+# (엔드포인트가 def라 FastAPI가 스레드풀에서 동시 실행하므로 모델 접근을 잠금으로 보호)
+_inference_lock = threading.Lock()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -85,14 +90,18 @@ def _tmp_file(upload: UploadFile, data: bytes) -> str:
 # ──────────────────────────────────────────
 # 1. 음식 분류
 # ──────────────────────────────────────────
+# def(동기) 엔드포인트 — FastAPI가 외부 스레드풀에서 실행하므로
+# 블로킹 추론·외부 API 호출이 이벤트 루프를 막지 않는다.
 @app.post("/internal/v1/food-classification")
-async def food_classification(file: UploadFile = File(...), _=Depends(verify_token)):
-    data = await file.read()
+def food_classification(file: UploadFile = File(...), _=Depends(verify_token)):
+    data = file.file.read()
     _validate_image(file, data)
     tmp_path = _tmp_file(file, data)
     try:
         logger.info(f"[food-classification] 요청: {file.filename} ({len(data)} bytes)")
-        result = predict_image(food_model, food_device, tmp_path, food_classes)
+        # MPS 멀티스레드 추론 불안정 방지를 위해 모델 접근을 직렬화
+        with _inference_lock:
+            result = predict_image(food_model, food_device, tmp_path, food_classes)
         if "error" in result:
             return JSONResponse(status_code=400, content={"error": result["error"]})
         logger.info(f"[food-classification] 결과: {result['best_match']} ({result['source']})")
@@ -114,8 +123,8 @@ async def food_classification(file: UploadFile = File(...), _=Depends(verify_tok
 # 2. 영수증 OCR
 # ──────────────────────────────────────────
 @app.post("/internal/v1/receipt-ocr")
-async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
-    data = await file.read()
+def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
+    data = file.file.read()
     _validate_image(file, data)
     tmp_path = _tmp_file(file, data)
     try:
@@ -138,8 +147,8 @@ async def receipt_ocr(file: UploadFile = File(...), _=Depends(verify_token)):
 # 3. 냉장고 식재료 감지
 # ──────────────────────────────────────────
 @app.post("/internal/v1/fridge-detection")
-async def fridge_detection(file: UploadFile = File(...), _=Depends(verify_token)):
-    data = await file.read()
+def fridge_detection(file: UploadFile = File(...), _=Depends(verify_token)):
+    data = file.file.read()
     _validate_image(file, data)
     tmp_path = _tmp_file(file, data)
     try:
