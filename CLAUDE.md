@@ -52,8 +52,11 @@ python -m models.receipt_ocr.receipt_ocr
 # 냉장고 식재료 감지
 python -m models.fridge_detection.fridge_detection
 
-# 분류 모델 정확도 평가
+# 분류 모델 정확도 평가 (test set 기준 전체·클래스별 정확도)
 python -m models.food_classifier.test_V2_M
+
+# 분류 모델 혼동행렬 진단 (val set 기준 Precision·Recall·F1 + 최다 혼동 쌍)
+python -m models.food_classifier.eval_val_V2_M
 
 # 분류 모델 학습 (최대 50 epoch, early stopping patience=8)
 python training/train_EfficientNet_V2_M.py
@@ -102,9 +105,10 @@ Training uses `WeightedRandomSampler` to handle class imbalance.
 | File | Purpose |
 |------|---------|
 | `main.py` | FastAPI entrypoint — 3 endpoints, Bearer auth, image validation |
-| `models/category.py` | Category enum + `normalize_category()` (Gemini 응답을 안전하게 보정) |
+| `models/category.py` | 유효 카테고리 set(`VALID_CATEGORIES`) + `normalize_category()` (Gemini 응답을 안전하게 보정) |
 | `models/food_classifier/predict_V2_M.py` | Main classifier with Gemini fallback |
-| `models/food_classifier/test_V2_M.py` | Per-class accuracy evaluation |
+| `models/food_classifier/test_V2_M.py` | Per-class accuracy evaluation (test set) |
+| `models/food_classifier/eval_val_V2_M.py` | Confusion-matrix diagnosis (val set) — Precision·Recall·F1·Macro + 최다 혼동 쌍 |
 | `models/receipt_ocr/receipt_ocr.py` | Document AI + Gemini OCR pipeline |
 | `models/fridge_detection/fridge_detection.py` | Gemini Vision 냉장고 식재료 감지 |
 | `training/train_EfficientNet_V2_M.py` | Model training script |

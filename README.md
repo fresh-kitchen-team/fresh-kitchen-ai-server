@@ -256,7 +256,7 @@ python -m models.food_classifier.eval_val_V2_M
 ```bash
 python scripts/data_crawl.py   # 1. DuckDuckGo 이미지 크롤링 (ddgs 패키지)
 python scripts/data_clean.py   # 2. MD5 해시로 중복 이미지 제거
-python scripts/data_split.py   # 3. train → val 분리 (멱등성 보장)
+python scripts/data_split.py   # 3. train → val 분리 (재실행 시 val을 train으로 복원 후 재분할 → 멱등)
 python scripts/data_diet.py    # 4. 클래스별 이미지 수 상한 (train ≤ 400, val ≤ 80)
 python scripts/data_len.py     # 5. 최종 통계 출력
 ```
@@ -288,7 +288,7 @@ fresh-kitchen-ai-server/
 ├── best_food_model_v2_m_ver5.pth            # 운영 모델 (git 제외, ~200MB)
 │
 ├── models/
-│   ├── category.py                          # 카테고리 enum + normalize_category()
+│   ├── category.py                          # 유효 카테고리 set + normalize_category()
 │   ├── food_classifier/
 │   │   ├── predict_V2_M.py                  # EfficientNet 추론 + Gemini 폴백
 │   │   ├── test_V2_M.py                     # test set 정확도 평가
