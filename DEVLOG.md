@@ -313,7 +313,7 @@ if not isinstance(result, dict):
 
 1. **`data_crawl.py`** — DuckDuckGo (`ddgs` 패키지) 로 클래스별 이미지 자동 다운로드
 2. **`data_clean.py`** — MD5 해시로 중복 제거 (split 간 누수 차단)
-3. **`data_split.py`** — train → val 분리 (실행 시 val 초기화로 멱등성 보장)
+3. **`data_split.py`** — train → val 분리 (재실행 시 기존 val을 train으로 되돌린 뒤 재분할 → 멱등성 보장)
 4. **`data_diet.py`** — 클래스별 이미지 수 상한 (train ≤ 400, val ≤ 80) — 불균형 완화
 5. **`data_len.py`** — 클래스별 통계 출력
 
@@ -354,7 +354,7 @@ if not isinstance(result, dict):
 | **언어** | Python 3.10.19 |
 | **웹 프레임워크** | FastAPI 0.136, uvicorn 0.46 |
 | **딥러닝** | PyTorch 2.11, torchvision 0.26 |
-| **모델** | EfficientNet V2-M (timm/torchvision) |
+| **모델** | EfficientNet V2-M (torchvision) |
 | **외부 API** | Google Cloud Document AI, Google Gemini 2.5 Flash (`google-genai`) |
 | **이미지** | Pillow 12.2 |
 | **데이터 수집** | ddgs (DuckDuckGo 크롤러) |
