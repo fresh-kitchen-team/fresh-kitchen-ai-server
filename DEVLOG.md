@@ -278,8 +278,6 @@ Apple Silicon MPS → NVIDIA CUDA → CPU 순으로 자동 선택. Mixed Precisi
 - **매칭 로직 보완** — 표기 차이를 수동 대조로 교정 중. 부분일치 등 자동화 검토.
 - **정답지 정제·근접샷 위주 구성** — 추측 표기 제거, 과밀 풀샷 배제.
 
-> 상세 분석: `docs/logs/eval/analysis_20260613.md`
-
 ---
 
 ## 마주친 문제와 해결
