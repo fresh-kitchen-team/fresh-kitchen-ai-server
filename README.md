@@ -5,7 +5,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10.19-blue)]() [![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688)]() [![PyTorch](https://img.shields.io/badge/PyTorch-2.11-EE4C2C)]()
 
-> 📓 **개발 일지** — 모델 진화(ver1 → ver5), 주요 기술적 의사결정과 시행착오는 [`DEVLOG.md`](DEVLOG.md) 에 기록되어 있습니다.
+> 📓 **개발 일지** — 모델 진화(ver2 → ver5), 주요 기술적 의사결정과 시행착오는 [`DEVLOG.md`](DEVLOG.md) 에 기록되어 있습니다.
 
 ---
 
@@ -235,7 +235,20 @@ python -m models.food_classifier.eval_val_V2_M
 - `test_V2_M` — `dataset/test/` 기준 전체·클래스별 정확도 출력
 - `eval_val_V2_M` — `dataset/val/` 기준 정확도(Precision·Recall·F1·Macro)와 **클래스별 오분류 방향(혼동행렬)** 분석. 결과는 `docs/logs/ver5_0528/` 에 `confusion_matrix_val.csv`·`class_metrics_val.csv` 로 저장 (재학습 없이 동작, val 폴더는 읽기 전용)
 
-학습·평가 로그는 **버전+날짜 폴더** `docs/logs/<버전>_<MMDD>/` 에 모읍니다 (예: `docs/logs/ver5_0528/training_log.csv`).
+#### 영수증 OCR · 냉장고 감지 평가
+
+출력이 "품목 리스트 + 카테고리(+영수증은 구매일)" 라, 정답 JSON 대비 **집합 기반 Precision·Recall·F1** 로 채점합니다.
+
+```bash
+python -m models.fridge_detection.eval_fridge
+python -m models.receipt_ocr.eval_receipt
+```
+
+- `dataset/eval/{fridge,receipt}/` 에 사진과 **같은 이름의 정답 JSON**(`{"ingredients":[{"name","category"}], "purchasedAt"}`)을 두면 자동 매칭
+- 품목 F1·카테고리 정확도(+영수증 구매일 정확도) 출력, 실행마다 `docs/logs/eval/<종류>_<타임스탬프>.csv` 저장
+- 채점 로직은 공용 모듈 `models/eval_common.py`
+
+학습·평가 로그는 **버전+날짜 폴더** `docs/logs/<버전>_<MMDD>/` 에 모으고, 생성형 파이프라인 평가 결과는 `docs/logs/eval/` 에 모읍니다 (예: `docs/logs/ver5_0528/training_log.csv`).
 
 > **단독 실행 시 주의** — `models/` 하위 모듈(`predict_V2_M`·`receipt_ocr`·`fridge_detection`·`test_V2_M`)은
 > 절대 import(`from models.category import ...`)를 사용하므로 **프로젝트 루트에서 `python -m` 모듈 형태**로 실행해야 합니다.
@@ -269,6 +282,7 @@ dataset/
 ├── val/<class>/*.jpg       # 검증 데이터
 ├── test/<class>/*.jpg      # 테스트 데이터
 ├── test_real_image/        # 3개 파이프라인 실제 테스트용 이미지
+├── eval/{fridge,receipt}/  # 영수증·냉장고 평가용 사진 + 정답 JSON
 ├── crawldata/              # 크롤링 원본
 └── auto_labeled/<label>/   # Gemini 자동 레이블링 결과
 ```
@@ -289,14 +303,17 @@ fresh-kitchen-ai-server/
 │
 ├── models/
 │   ├── category.py                          # 유효 카테고리 set + normalize_category()
+│   ├── eval_common.py                       # 영수증·냉장고 평가 공용 채점(P·R·F1)
 │   ├── food_classifier/
 │   │   ├── predict_V2_M.py                  # EfficientNet 추론 + Gemini 폴백
 │   │   ├── test_V2_M.py                     # test set 정확도 평가
 │   │   └── eval_val_V2_M.py                 # val set 정확도 + 혼동행렬 진단
 │   ├── receipt_ocr/
-│   │   └── receipt_ocr.py                   # Document AI + Gemini OCR
+│   │   ├── receipt_ocr.py                   # Document AI + Gemini OCR
+│   │   └── eval_receipt.py                  # 영수증 OCR 정확도 평가
 │   └── fridge_detection/
-│       └── fridge_detection.py              # Gemini Vision 냉장고 감지
+│       ├── fridge_detection.py              # Gemini Vision 냉장고 감지
+│       └── eval_fridge.py                   # 냉장고 감지 정확도 평가
 │
 ├── training/
 │   └── train_EfficientNet_V2_M.py           # Progressive Unfreezing 학습 스크립트
@@ -310,7 +327,7 @@ fresh-kitchen-ai-server/
 │
 ├── docs/
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
-│   └── logs/                               # 버전+날짜별 학습·평가 로그 (ver2_0503 ~ ver5_0528/)
+│   └── logs/                               # 학습 로그(ver2_0503 ~ ver5_0528/) + 생성형 평가 로그(eval/)
 │
 ├── credentials/                            # GCP 서비스 계정 키 (git 제외)
 ├── samples/                                # 로컬 단독 실행 테스트 이미지 (git 제외)
