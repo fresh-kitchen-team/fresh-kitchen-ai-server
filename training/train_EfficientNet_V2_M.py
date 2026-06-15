@@ -24,9 +24,9 @@ GRAD_CLIP_NORM = 1.0    # 기울기 폭발 방지 — backbone 전체 해동 후
 UNFREEZE_EPOCH = 5      # head 위주로 수렴시킨 후 backbone 전체 해동 (Progressive Unfreezing)
 # 재학습 시 둘 다 변경 (예: 'ver6', '0610') — 기존 버전 로그·가중치 덮어쓰기 방지
 MODEL_VERSION = 'ver5'
-MODEL_DATE = '0528'      # 로그 폴더명 접미사 (MMDD) → docs/logs/ver5_0528/
+MODEL_DATE = '0528'      # 로그 폴더명 접미사 (MMDD) → docs/logs/classifier/ver5_0528/
 SAVE_PATH = os.path.join(_BASE_DIR, f'best_food_model_v2_m_{MODEL_VERSION}.pth')
-_LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', f'{MODEL_VERSION}_{MODEL_DATE}')
+_LOG_DIR = os.path.join(_BASE_DIR, 'docs', 'logs', 'classifier', f'{MODEL_VERSION}_{MODEL_DATE}')
 os.makedirs(_LOG_DIR, exist_ok=True)
 LOG_PATH = os.path.join(_LOG_DIR, 'training_log.csv')
 CLASS_ACC_LOG_PATH = os.path.join(_LOG_DIR, 'class_acc.csv')

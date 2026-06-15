@@ -233,11 +233,11 @@ python -m models.food_classifier.eval_val_V2_M
 ```
 
 - `test_V2_M` — `dataset/test/` 기준 전체·클래스별 정확도 출력
-- `eval_val_V2_M` — `dataset/val/` 기준 정확도(Precision·Recall·F1·Macro)와 **클래스별 오분류 방향(혼동행렬)** 분석. 결과는 `docs/logs/ver5_0528/` 에 `confusion_matrix_val.csv`·`class_metrics_val.csv` 로 저장 (재학습 없이 동작, val 폴더는 읽기 전용)
+- `eval_val_V2_M` — `dataset/val/` 기준 정확도(Precision·Recall·F1·Macro)와 **클래스별 오분류 방향(혼동행렬)** 분석. 결과는 `docs/logs/classifier/ver5_0528/` 에 `confusion_matrix_val.csv`·`class_metrics_val.csv` 로 저장 (재학습 없이 동작, val 폴더는 읽기 전용)
 
 #### 영수증 OCR · 냉장고 감지 평가
 
-출력이 "품목 리스트 + 카테고리(+영수증은 구매일)" 라, 정답 JSON 대비 **집합 기반 Precision·Recall·F1** 로 채점합니다.
+출력이 자유 표기의 품목 리스트라, 정답 JSON과 **사진별 '예측 vs 정답' 비교표**로 대조합니다(영수증은 구매일 정확도 포함).
 
 ```bash
 python -m models.fridge_detection.eval_fridge
@@ -245,10 +245,10 @@ python -m models.receipt_ocr.eval_receipt
 ```
 
 - `dataset/eval/{fridge,receipt}/` 에 사진과 **같은 이름의 정답 JSON**(`{"ingredients":[{"name","category"}], "purchasedAt"}`)을 두면 자동 매칭
-- 품목 F1·카테고리 정확도(+영수증 구매일 정확도) 출력, 실행마다 `docs/logs/eval/<종류>_<타임스탬프>.csv` 저장
-- 채점 로직은 공용 모듈 `models/eval_common.py`
+- 사진마다 한 행으로 **`예측 | 정답 | 놓침 | 추가`** 비교 표(CSV) 출력(영수증은 `구매일_예측·구매일_정답` 포함) — 실행마다 `docs/logs/fridge/`·`docs/logs/receipt/` 에 타임스탬프 파일로 저장
+- 단일 점수(F1) 대신 "실제 vs 모델 출력"을 직접 대조하는 방식. 이름은 동의어 보정 없는 정확 일치. 비교 로직은 공용 모듈 `models/eval_common.py`
 
-학습·평가 로그는 **버전+날짜 폴더** `docs/logs/<버전>_<MMDD>/` 에 모으고, 생성형 파이프라인 평가 결과는 `docs/logs/eval/` 에 모읍니다 (예: `docs/logs/ver5_0528/training_log.csv`).
+로그는 종류별로 나눠 모읍니다 — 분류 학습/평가는 `docs/logs/classifier/<버전>_<MMDD>/`, 냉장고·영수증 평가는 `docs/logs/fridge/`·`docs/logs/receipt/` (예: `docs/logs/classifier/ver5_0528/training_log.csv`).
 
 > **단독 실행 시 주의** — `models/` 하위 모듈(`predict_V2_M`·`receipt_ocr`·`fridge_detection`·`test_V2_M`)은
 > 절대 import(`from models.category import ...`)를 사용하므로 **프로젝트 루트에서 `python -m` 모듈 형태**로 실행해야 합니다.
@@ -303,7 +303,7 @@ fresh-kitchen-ai-server/
 │
 ├── models/
 │   ├── category.py                          # 유효 카테고리 set + normalize_category()
-│   ├── eval_common.py                       # 영수증·냉장고 평가 공용 채점(P·R·F1)
+│   ├── eval_common.py                       # 영수증·냉장고 평가 공용 비교 로직
 │   ├── food_classifier/
 │   │   ├── predict_V2_M.py                  # EfficientNet 추론 + Gemini 폴백
 │   │   ├── test_V2_M.py                     # test set 정확도 평가
@@ -327,7 +327,10 @@ fresh-kitchen-ai-server/
 │
 ├── docs/
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
-│   └── logs/                               # 학습 로그(ver2_0503 ~ ver5_0528/) + 생성형 평가 로그(eval/)
+│   └── logs/                               # 종류별 로그
+│       ├── classifier/<버전>_<MMDD>/        # 분류 학습·평가 로그
+│       ├── fridge/                          # 냉장고 평가 결과 CSV
+│       └── receipt/                         # 영수증 평가 결과 CSV
 │
 ├── credentials/                            # GCP 서비스 계정 키 (git 제외)
 ├── samples/                                # 로컬 단독 실행 테스트 이미지 (git 제외)
