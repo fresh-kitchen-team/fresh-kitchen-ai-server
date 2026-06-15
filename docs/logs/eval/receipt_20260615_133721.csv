@@ -1,0 +1,53 @@
+﻿사진,품목,상태,정답_카테고리,예측_카테고리
+receipt1.jpeg,📅 구매일,일치,2012-07-03,2012-07-03
+receipt1.jpeg,닭가슴살,놓침,MEAT,
+receipt1.jpeg,브로콜리,일치,VEGETABLE,VEGETABLE
+receipt1.jpeg,파프리카,일치,VEGETABLE,VEGETABLE
+receipt1.jpeg,볶음땅콩,일치,ETC,GRAIN
+receipt1.jpeg,적양배추,일치,VEGETABLE,VEGETABLE
+receipt1.jpeg,양상추,일치,VEGETABLE,VEGETABLE
+receipt1.jpeg,가슴살,추가,,MEAT
+receipt2.png,📅 구매일,일치,2021-10-31,2021-10-31
+receipt2.png,소시지,놓침,MEAT,
+receipt2.png,레몬음료,놓침,DRINK,
+receipt2.png,이온음료,놓침,DRINK,
+receipt2.png,마늘빅프랑크,추가,,MEAT
+receipt2.png,라들러레몬,추가,,DRINK
+receipt2.png,마운틴블러스트,추가,,DRINK
+receipt3.jpeg,📅 구매일,일치,,
+receipt3.jpeg,짬뽕,놓침,ETC,
+receipt3.jpeg,방울토마토,일치,FRUIT,FRUIT
+receipt3.jpeg,주스,일치,DRINK,DRINK
+receipt3.jpeg,우유,놓침,DAIRY,
+receipt3.jpeg,돼지고기,놓침,MEAT,
+receipt3.jpeg,치킨,일치,MEAT,MEAT
+receipt3.jpeg,새우,놓침,SEAFOOD,
+receipt3.jpeg,곰탕,놓침,ETC,
+receipt3.jpeg,오리고기,놓침,MEAT,
+receipt3.jpeg,훈제연어,일치,SEAFOOD,SEAFOOD
+receipt3.jpeg,느타리버섯,일치,VEGETABLE,VEGETABLE
+receipt3.jpeg,상추,일치,VEGETABLE,VEGETABLE
+receipt3.jpeg,애호박,일치,VEGETABLE,VEGETABLE
+receipt3.jpeg,대파,놓침,VEGETABLE,
+receipt3.jpeg,마늘,놓침,VEGETABLE,
+receipt3.jpeg,사과,일치,FRUIT,FRUIT
+receipt3.jpeg,닭다리너겟,일치,MEAT,MEAT
+receipt3.jpeg,케이퍼,일치,ETC,SAUCE
+receipt3.jpeg,리코타치즈,일치,DAIRY,DAIRY
+receipt3.jpeg,초코칩,놓침,ETC,
+receipt3.jpeg,바게트,일치,GRAIN,GRAIN
+receipt3.jpeg,초마짬뽕,추가,,ETC
+receipt3.jpeg,레이디핌,추가,,ETC
+receipt3.jpeg,저지방우유,추가,,DAIRY
+receipt3.jpeg,목심,추가,,MEAT
+receipt3.jpeg,칵테일새우,추가,,SEAFOOD
+receipt3.jpeg,한우곰탕,추가,,ETC
+receipt3.jpeg,오리,추가,,MEAT
+receipt3.jpeg,깐마늘,추가,,VEGETABLE
+receipt3.jpeg,감,추가,,FRUIT
+receipt3.jpeg,초코썸,추가,,ETC
+receipt4.jpeg,📅 구매일,일치,2026-04-16,2026-04-16
+receipt4.jpeg,양념치킨,일치,MEAT,MEAT
+receipt4.jpeg,두부김치,일치,ETC,ETC
+receipt4.jpeg,맥주,놓침,DRINK,
+receipt4.jpeg,생맥주,추가,,DRINK

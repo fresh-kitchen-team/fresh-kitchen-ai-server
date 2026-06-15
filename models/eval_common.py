@@ -1,8 +1,8 @@
 """영수증 OCR · 냉장고 감지 정확도 평가 공용 유틸리티.
 
 두 모델 모두 '품목 리스트 + 카테고리'를 출력하므로, 단일 라벨 정확도가 아니라
-집합 기반 Precision / Recall / F1 로 평가한다. 품목 이름은 정확 일치를 기본으로 하되
-동의어 테이블(SYNONYMS)로 표기 차이를 흡수한다.
+집합 기반 Precision / Recall / F1 로 평가한다. 품목 이름은 공백만 무시한 정확 일치로
+비교한다(동의어 보정 없음 — 보이는 것을 그대로 뽑는지를 정직하게 측정).
 """
 
 import os
@@ -19,45 +19,10 @@ IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EVAL_LOG_DIR = os.path.join(_BASE_DIR, "docs", "logs", "eval")
 
-# ==========================================
-# 동의어 테이블
-# ==========================================
-# canonical(대표 표기) -> 같은 의미로 취급할 표기들.
-# 예측·정답 양쪽 모두 이 테이블로 대표 표기에 매핑한 뒤 비교한다.
-# 새 동의어는 여기에 줄만 추가하면 평가에 즉시 반영된다.
-SYNONYMS = {
-    "계란": ["달걀", "에그", "유정란"],
-    "대파": ["파"],
-    "콜라": ["코카콜라", "펩시", "탄산음료"],
-    "사이다": ["스프라이트"],
-    "두부": ["연두부", "순두부"],
-    "삼겹살": ["대패삼겹", "냉동삼겹"],
-    "돼지고기": ["돈육", "포크"],
-    "소고기": ["쇠고기", "우육", "비프"],
-    "닭고기": ["닭", "치킨"],
-    "고구마": ["군고구마"],
-    "감자": ["포테이토"],
-    "토마토": ["방울토마토", "대추토마토"],
-    "양파": ["적양파"],
-    "우유": ["흰우유", "멸균우유"],
-    "치즈": ["슬라이스치즈"],
-    "오징어": ["물오징어", "갑오징어"],
-    "새우": ["흰다리새우", "대하"],
-    "당근": ["홍당무"],
-}
-
-# alias -> canonical 역방향 조회 테이블 (대표 표기 자신도 포함)
-_ALIAS_TO_CANON = {}
-for _canon, _aliases in SYNONYMS.items():
-    _ALIAS_TO_CANON[_canon.replace(" ", "")] = _canon
-    for _a in _aliases:
-        _ALIAS_TO_CANON[_a.replace(" ", "")] = _canon
-
 
 def normalize_name(name: str) -> str:
-    """품목 이름 정규화: 공백 제거 후 동의어를 대표 표기로 환산."""
-    key = (name or "").strip().replace(" ", "")
-    return _ALIAS_TO_CANON.get(key, key)
+    """품목 이름 정규화: 공백만 제거(예: '방울 토마토' == '방울토마토'). 동의어 보정 없음."""
+    return (name or "").strip().replace(" ", "")
 
 
 # ==========================================
@@ -95,50 +60,56 @@ def load_eval_samples(eval_dir: str) -> list:
 
 
 # ==========================================
-# 집합 기반 채점
+# 정답 vs 예측 비교
 # ==========================================
-def _name_to_category(items: list) -> dict:
-    """[{name, category}] -> {정규화된 이름: 카테고리} (먼저 나온 항목 우선)."""
+def _name_to_item(items: list) -> dict:
+    """[{name, category}] -> {정규화된 이름: (원본 이름, 카테고리)} (먼저 나온 항목 우선)."""
     mapping = {}
     for it in items or []:
-        if not isinstance(it, dict):
-            name = normalize_name(str(it))
-            mapping.setdefault(name, "ETC")
-            continue
-        name = normalize_name(it.get("name", ""))
-        if not name:
-            continue
-        mapping.setdefault(name, (it.get("category") or "ETC"))
+        if isinstance(it, dict):
+            raw = (it.get("name") or "").strip()
+            cat = it.get("category") or "ETC"
+        else:
+            raw, cat = str(it).strip(), "ETC"
+        key = normalize_name(raw)
+        if key:
+            mapping.setdefault(key, (raw, cat))
     return mapping
 
 
-def score_items(pred_items: list, gt_items: list) -> dict:
-    """한 이미지의 품목 리스트를 채점.
+def compare_items(pred_items: list, gt_items: list) -> dict:
+    """한 사진의 정답 vs 예측을 품목별로 비교.
 
-    - 이름 매칭: 정규화(동의어 흡수) 후 집합 교집합으로 TP 판정
-    - 카테고리: 이름이 맞은(TP) 항목 중 카테고리까지 일치한 비율
+    반환 rows: [{"품목","상태","정답_카테고리","예측_카테고리"}, ...]
+      - 상태: 일치(정답·예측 모두 있음) / 놓침(정답에만) / 추가(예측에만)
+    counts: 일치·놓침·추가 수 + 카테고리 일치 수(일치 품목 중 카테고리까지 같은 것)
     """
-    pred = _name_to_category(pred_items)
-    gt = _name_to_category(gt_items)
+    pred = _name_to_item(pred_items)
+    gt = _name_to_item(gt_items)
 
-    pred_names = set(pred)
-    gt_names = set(gt)
+    rows = []
+    cat_correct = 0
+    match = miss = extra = 0
 
-    matched = pred_names & gt_names
-    tp = len(matched)
-    fp = len(pred_names - gt_names)
-    fn = len(gt_names - pred_names)
+    # 정답 순서대로: 일치 / 놓침
+    for key, (raw, cat) in gt.items():
+        if key in pred:
+            pcat = pred[key][1]
+            rows.append({"품목": raw, "상태": "일치", "정답_카테고리": cat, "예측_카테고리": pcat})
+            match += 1
+            if cat == pcat:
+                cat_correct += 1
+        else:
+            rows.append({"품목": raw, "상태": "놓침", "정답_카테고리": cat, "예측_카테고리": ""})
+            miss += 1
 
-    cat_correct = sum(1 for n in matched if pred[n] == gt[n])
+    # 예측에만 있는 것: 추가(오검출)
+    for key, (raw, cat) in pred.items():
+        if key not in gt:
+            rows.append({"품목": raw, "상태": "추가", "정답_카테고리": "", "예측_카테고리": cat})
+            extra += 1
 
-    return {
-        "tp": tp, "fp": fp, "fn": fn,
-        "cat_correct": cat_correct,
-        "matched": matched,
-        "missed": gt_names - pred_names,    # 정답엔 있으나 예측 못 한 것 (FN)
-        "extra": pred_names - gt_names,     # 예측했으나 정답에 없는 것 (FP)
-        "pred": pred, "gt": gt,
-    }
+    return {"rows": rows, "match": match, "miss": miss, "extra": extra, "cat_correct": cat_correct}
 
 
 def prf(tp: int, fp: int, fn: int) -> tuple:
