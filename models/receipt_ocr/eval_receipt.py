@@ -7,7 +7,7 @@ CSV 열: 사진 | 품목 | 상태(일치/놓침/추가) | 정답_카테고리 | 
 
 정답 JSON 형식 (예: receipt2.jpeg → receipt2.json):
     {"purchasedAt": "2026-05-13",
-     "ingredients": [{"name": "두부", "category": "GRAIN"}, ...]}
+     "ingredients": [{"name": "두부", "category": "ETC"}, ...]}
     구매일이 영수증에 없으면 "purchasedAt": null.
 
 실행:
