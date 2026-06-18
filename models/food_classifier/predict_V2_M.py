@@ -46,7 +46,7 @@ CLASS_CATEGORY = {
     "부추": "VEGETABLE",
     "콜라": "DRINK",
     "식용유": "ETC",
-    "옥수수": "GRAIN",
+    "옥수수": "VEGETABLE",
     "오이": "VEGETABLE",
     "된장": "SAUCE",
     "계란": "ETC",
