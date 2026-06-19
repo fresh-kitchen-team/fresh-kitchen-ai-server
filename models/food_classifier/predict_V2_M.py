@@ -17,8 +17,8 @@ from models.category import normalize_category
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_BASE_DIR, '.env'))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# 70 클래스 기준 softmax 최댓값이 80% 미만이면 노이즈 영역 — Gemini에 위임
-CONFIDENCE_THRESHOLD = 80.0
+# 70 클래스 기준 softmax 최댓값이 90% 미만이면 노이즈 영역 — Gemini에 위임
+CONFIDENCE_THRESHOLD = 90.0
 SAVE_DIR = os.path.join(_BASE_DIR, 'dataset', 'auto_labeled')
 GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
 
