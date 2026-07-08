@@ -146,7 +146,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 `source` 값:
-- `efficientnet` — 분류기가 80% 이상 확신
+- `efficientnet` — 분류기가 90% 이상 확신
 - `gemini` — 분류기 확신 부족 → Gemini 폴백 성공 (`dataset/auto_labeled/` 자동 저장)
 - `efficientnet_fallback` — Gemini도 실패 → 분류기 원래 결과 사용
 
