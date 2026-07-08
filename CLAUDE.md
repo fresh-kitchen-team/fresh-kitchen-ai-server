@@ -58,6 +58,12 @@ python -m models.food_classifier.test_V2_M
 # 분류 모델 혼동행렬 진단 (val set 기준 Precision·Recall·F1 + 최다 혼동 쌍)
 python -m models.food_classifier.eval_val_V2_M
 
+# 영수증 OCR 평가 (dataset/eval/receipt/ 의 사진 + 같은 이름의 정답 JSON 대조)
+python -m models.receipt_ocr.eval_receipt
+
+# 냉장고 감지 평가 (dataset/eval/fridge/ 의 사진 + 같은 이름의 정답 JSON 대조)
+python -m models.fridge_detection.eval_fridge
+
 # 분류 모델 학습 (최대 50 epoch, early stopping patience=8)
 python training/train_EfficientNet_V2_M.py
 ```
@@ -95,7 +101,9 @@ Food Classifier와 Training 스크립트는 `mps` (Apple Silicon) → `cuda` →
 dataset/
 ├── train/, val/, test/   # Class-separated folders (70 food classes)
 ├── crawldata/            # Raw DuckDuckGo downloads
-└── auto_labeled/         # Gemini-labeled images (future training data)
+├── auto_labeled/         # Gemini-labeled images (future training data)
+├── eval/                 # 영수증·냉장고 평가용 사진 + 정답 JSON ({fridge,receipt}/)
+└── test_real_image/      # 3개 파이프라인 실제 테스트용 이미지
 ```
 
 Training uses `WeightedRandomSampler` to handle class imbalance.
@@ -110,7 +118,10 @@ Training uses `WeightedRandomSampler` to handle class imbalance.
 | `models/food_classifier/test_V2_M.py` | Per-class accuracy evaluation (test set) |
 | `models/food_classifier/eval_val_V2_M.py` | Confusion-matrix diagnosis (val set) — Precision·Recall·F1·Macro + 최다 혼동 쌍 |
 | `models/receipt_ocr/receipt_ocr.py` | Document AI + Gemini OCR pipeline |
+| `models/receipt_ocr/eval_receipt.py` | 영수증 OCR 평가 — 정답 JSON 대조 비교표 CSV |
 | `models/fridge_detection/fridge_detection.py` | Gemini Vision 냉장고 식재료 감지 |
+| `models/fridge_detection/eval_fridge.py` | 냉장고 감지 평가 — 정답 JSON 대조 비교표 CSV |
+| `models/eval_common.py` | 영수증·냉장고 평가 공용 로직 (품목 비교·CSV 저장) |
 | `training/train_EfficientNet_V2_M.py` | Model training script |
 | `requirements.txt` | All Python dependencies |
 | `.env` | API credentials (not in git) |
