@@ -164,6 +164,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 
 - `purchasedAt`: `YYYY-MM-DD` 형식. 인식 실패 시 `null`
 - Document AI 1차 추출 → Gemini 2차 정제 (브랜드명 제거 · 비식재료 필터링)
+- Document AI·Gemini 오류/타임아웃 시 `{"purchasedAt": null, "ingredients": []}` 반환 (재시도 없음)
 
 ### 3️⃣ 냉장고 식재료 감지 — `POST /internal/v1/fridge-detection`
 
@@ -327,6 +328,8 @@ fresh-kitchen-ai-server/
 │
 ├── docs/
 │   ├── git-convention.md                    # 커밋·브랜치 컨벤션
+│   ├── 최종개인보고서.md                     # 산학프로젝트 최종 개인보고서
+│   ├── 상세개발계획서 AI담당.xlsx            # 상세 개발 계획서
 │   └── logs/                               # 종류별 로그
 │       ├── classifier/<버전>_<MMDD>/        # 분류 학습·평가 로그
 │       ├── fridge/                          # 냉장고 평가 결과 CSV
